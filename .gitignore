@@ -1,0 +1,48 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Django / Python project files
+*.log
+local_settings.py
+
+# Databases
+db.sqlite3
+*.sqlite3
+
+# Media and collected static assets
+media/
+staticfiles/
+
+# Environment variables
+.env
+*.env
+
+# Testing / coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+htmlcov/
+
+# IDE / OS specific
+.idea/
+.vscode/
+*.swp
+.DS_Store
