@@ -1,0 +1,58 @@
+{% extends "layout/base.html" %}
+{% block title %}Listings | Etsy Panel{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="h5 mb-1">Active Listings</h2>
+        <div class="text-muted small">Etsy’den aktif listing’leri çekip gösterir.</div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-primary">Sync Now</button>
+    </form>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="card shadow-sm rounded-4">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in listings %}
+                <tr>
+                    <td>{{ l.etsy_listing_id }}</td>
+                    <td>{{ l.title }}</td>
+                    <td>
+                        {% if l.price_amount %}{{ l.price_amount }} {{ l.price_currency }}{% else %}-{% endif %}
+                    </td>
+                    <td>{{ l.quantity|default:"-" }}</td>
+                    <td>
+                        {% if l.url %}<a href="{{ l.url }}" target="_blank">Open</a>{% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-muted p-4">No listings yet. Click “Sync Now”.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

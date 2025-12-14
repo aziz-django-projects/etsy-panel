@@ -1,0 +1,16 @@
+{% extends "layout/base.html" %}
+{% block title %}Login | Etsy Panel{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="p-4 bg-white rounded-4 shadow-sm">
+            <h1 class="h5 mb-3">Giriş</h1>
+            <form method="post">
+                {% csrf_token %}
+                {{ form }}
+                <button class="btn btn-primary w-100" type="submit">Giriş</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
