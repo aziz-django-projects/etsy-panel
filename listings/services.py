@@ -9,30 +9,25 @@ def sync_active_listings(user):
     # Shop_id yoksa önce shop’ları çek
     if not account.shop_id:
         if not account.etsy_user_id:
-            raise RuntimeError("etsy_user_id is missing. Please re-connect Etsy.")  # (aynı)
+            raise RuntimeError("etsy_user_id is missing. Please re-connect Etsy.") 
 
         shops_payload = client.get_user_shops(account.etsy_user_id)
 
-        # CHANGED: Etsy bazı çağrılarda {"results":[...]} yerine direkt tek shop dict döndürebiliyor.
-        # Bu yüzden payload tipine göre parse ediyoruz.
         if isinstance(shops_payload, dict):
-            # CHANGED: Eğer "results" varsa liste gibi ele al, yoksa direkt dict'i tek shop kabul et
             results = shops_payload.get("results")
             if results is None:
                 results = [shops_payload]
         elif isinstance(shops_payload, list):
-            # CHANGED: Bazı durumlarda direkt liste dönebilir
             results = shops_payload
         else:
-            # CHANGED: Beklenmeyen payload tipi
             results = []
 
         if not results:
             raise RuntimeError("No shop found for this Etsy account.")
 
-        shop = results[0]  # şimdilik ilk shop
-        account.shop_id = shop.get("shop_id")           # CHANGED: artık payload'da kesin var
-        account.shop_name = shop.get("shop_name", "")   # CHANGED: artık payload'da kesin var
+        shop = results[0] 
+        account.shop_id = shop.get("shop_id")        
+        account.shop_name = shop.get("shop_name", "") 
         account.save()
 
 

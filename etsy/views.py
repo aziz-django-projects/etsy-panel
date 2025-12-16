@@ -38,7 +38,6 @@ def connect(request):
 
 @login_required
 def callback(request):
-    print("CALLBACK HIT ✅", request.get_full_path())
     # Etsy, redirect_uri’ye code + state ile döner :contentReference[oaicite:4]{index=4}
     code = request.GET.get("code")
     state = request.GET.get("state")

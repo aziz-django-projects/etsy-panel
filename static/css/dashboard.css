@@ -1,0 +1,49 @@
+body {
+    min-height: 100vh;
+}
+
+.app-shell {
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    border-right: 1px solid #e0dcd2;
+    padding: 2rem 1.5rem;
+}
+
+.brand img {
+    flex-shrink: 0;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 0.55rem;
+    text-decoration: none;
+    color: #5f5c52;
+    font-weight: 500;
+}
+
+.sidebar-link .icon {
+    font-size: 1.1rem;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+    background: #fff;
+    color: #1f1d17;
+    box-shadow: inset 0 0 0 1px #e0dcd2;
+}
+
+.topbar {
+    min-height: 76px;
+}

@@ -125,6 +125,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 ETSY_CLIENT_ID = os.getenv("ETSY_CLIENT_ID", "")
 ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET", "")
