@@ -1,172 +1,170 @@
 body {
-    min-height: 100vh;
-    background: red !important;
-    overflow-x: hidden;
+  min-height: 100vh;
+  background: red !important;
+  overflow-x: hidden;
 }
 
 .app-shell {
-    min-height: 100vh;
-    width: 100%;
-    overflow-x: hidden;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .sidebar {
-    width: 220px;
-    border-right: 1px solid #e0dcd2;
-    padding: 2rem 1.5rem;
+  width: 220px;
+  border-right: 1px solid #e0dcd2;
+  padding: 2rem 1.5rem;
 }
 
 .brand img {
-    flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.65rem 0.9rem;
-    border-radius: 0.55rem;
-    text-decoration: none;
-    color: #5f5c52;
-    font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.55rem;
+  text-decoration: none;
+  color: #5f5c52;
+  font-weight: 500;
 }
 
 .sidebar-link .icon {
-    font-size: 1.1rem;
+  font-size: 1.1rem;
 }
 
 .sidebar-link:hover,
 .sidebar-link.active {
-    background: #fff;
-    color: #1f1d17;
-    box-shadow: inset 0 0 0 1px #e0dcd2;
+  background: #fff;
+  color: #1f1d17;
+  box-shadow: inset 0 0 0 1px #e0dcd2;
 }
 
 .content {
-    min-width: 0;
+  min-width: 0;
 }
 
 main {
-    overflow-x: hidden;
+  overflow-x: hidden;
 }
 
 .topbar {
-    min-height: 76px;
+  min-height: 76px;
 }
 
 .listing-card {
-    border: 1px solid #e6dfd2;
-    border-radius: 1.25rem;
-    overflow: hidden;
+  border: 1px solid #e6dfd2;
+  border-radius: 1.25rem;
+  overflow: hidden;
 }
 
 .listing-media {
-    background: linear-gradient(135deg, #fefaf4, #f7f0e6);
+  background: linear-gradient(135deg, #fefaf4, #f7f0e6);
 }
 
 .placeholder-image {
-    gap: 0.4rem;
-    color: #a79f93;
+  gap: 0.4rem;
+  color: #a79f93;
 }
 
 .listing-meta {
-    font-size: 0.85rem;
+  font-size: 0.85rem;
 }
 
 .listing-card .card-footer button {
-    color: #867f74;
+  color: #867f74;
 }
 
 .listing-card .card-footer button:hover {
-    color: #333;
+  color: #333;
 }
 
 .card-title a:hover {
-    color: #0d6efd !important;
+  color: #0d6efd !important;
 }
 
 .order-stepper {
-    --progress: 0;
-    --dot-size: 32px;
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0.25rem 0 0.75rem;
+  --progress: 0; /* 0-100 */
+  --dot-size: 32px;
+  --steps: 5; /* kaç step varsa */
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--steps), 1fr);
+  align-items: start;
+  padding: 0.25rem 0 0.75rem;
 }
 
+/* çizgi: 1. kolonun ortasından başla, son kolonun ortasında bitir */
 .order-stepper::before {
-    content: "";
-    position: absolute;
-    left: calc(var(--dot-size) / 2);
-    right: calc(var(--dot-size) / 2);
-    top: 16px;
-    height: 2px;
-    background: #e6dfd2;
-}
+  content: "";
+  position: absolute;
+  top: calc(var(--dot-size) / 2);
+  height: 2px;
 
-.order-stepper::after {
-    content: "";
-    position: absolute;
-    left: calc(var(--dot-size) / 2);
-    top: 16px;
-    height: 2px;
-    width: calc((100% + var(--dot-size)) * (var(--progress) / 100));
-    background: #1f1d17;
+  left: calc(100% / (2 * var(--steps)));
+  right: calc(100% / (2 * var(--steps)));
+
+  background: linear-gradient(#1f1d17, #1f1d17) left /
+      calc(var(--progress) * 1%) 100% no-repeat,
+    #e6dfd2;
 }
 
 .order-step {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    color: #8a8276;
-    gap: 0.35rem;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  /* flex:1 KALKTI (grid zaten dağıtıyor) */
+  padding: 0; /* padding'i kaldır; hizayı bozar */
+  color: #8a8276;
+  gap: 0.35rem;
 }
 
 .order-step-dot {
-    width: var(--dot-size);
-    height: var(--dot-size);
-    border-radius: 999px;
-    border: 2px solid #d6d1c7;
-    display: grid;
-    place-items: center;
-    background: #fff;
-    color: #b0a79a;
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 999px;
+  border: 2px solid #d6d1c7;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #b0a79a;
 }
 
 .order-step.is-complete .order-step-dot {
-    background: #1f1d17;
-    border-color: #1f1d17;
-    color: #fff;
+  background: #1f1d17;
+  border-color: #1f1d17;
+  color: #fff;
 }
 
 .order-step.is-active .order-step-dot {
-    border-color: #1f1d17;
-    color: #1f1d17;
+  border-color: #1f1d17;
+  color: #1f1d17;
 }
 
 .order-step.is-complete,
 .order-step.is-active {
-    color: #1f1d17;
+  color: #1f1d17;
 }
 
 @media (max-width: 992px) {
-    .order-stepper {
-        gap: 0.5rem;
-    }
+  .order-stepper {
+    gap: 0.5rem;
+  }
 
-    .order-step small {
-        font-size: 0.75rem;
-    }
+  .order-step small {
+    font-size: 0.75rem;
+  }
 }
