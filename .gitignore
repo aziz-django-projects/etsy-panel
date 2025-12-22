@@ -22,8 +22,8 @@ dist/
 local_settings.py
 
 # Databases
-db.sqlite3
-*.sqlite3
+# db.sqlite3
+# *.sqlite3
 
 # Media and collected static assets
 media/
