@@ -6,6 +6,7 @@ class Listing(models.Model):
     title = models.CharField(max_length=255, blank=True)
     state = models.CharField(max_length=50, blank=True)  # active vs
     url = models.URLField(blank=True)
+    image_url = models.URLField(blank=True, default="")
     price_amount = models.IntegerField(null=True, blank=True)   # cents gibi
     price_currency = models.CharField(max_length=10, blank=True)
     quantity = models.IntegerField(null=True, blank=True)

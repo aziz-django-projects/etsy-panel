@@ -35,4 +35,19 @@ class EtsyClient:
             r.raise_for_status()
             return r.json()
 
+    def get_listing_images(self, listing_id: int):
+        url = f"{API_BASE}/listings/{listing_id}/images"
+        with httpx.Client(timeout=20) as client:
+            r = client.get(url, headers=self._headers())
+            r.raise_for_status()
+            return r.json()
 
+    def get_shop_receipts(self, shop_id: int, limit: int = 50, offset: int = 0, min_created: int | None = None):
+        url = f"{API_BASE}/shops/{shop_id}/receipts"
+        params = {"limit": limit, "offset": offset}
+        if min_created is not None:
+            params["min_created"] = min_created
+        with httpx.Client(timeout=20) as client:
+            r = client.get(url, headers=self._headers(), params=params)
+            r.raise_for_status()
+            return r.json()

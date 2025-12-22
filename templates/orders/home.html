@@ -1,0 +1,98 @@
+{% extends "layout/base.html" %}
+{% block title %}Orders | Etsy Panel{% endblock %}
+{% block content %}
+<header class="topbar d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-white rounded-4 mb-4">
+    <div>
+        <h1 class="h5 mb-0">Orders</h1>
+        <small class="text-muted">Etsy'den gelen siparislerin akisini takip et.</small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="badge text-bg-light border">Ship entegrasyonu: Hazirlaniyor</span>
+        <form method="post" action="{% url 'orders_sync' %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary btn-sm" type="submit">Sync now</button>
+        </form>
+    </div>
+</header>
+
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} mb-2" role="alert">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="d-grid gap-4">
+    {% if order_cards %}
+    {% for card in order_cards %}
+    <section class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h2 class="h6 mb-1">Order #{{ card.order.etsy_order_id }}</h2>
+                    <div class="text-muted small">
+                        Musteri: {{ card.order.buyer_name|default:"-" }} · {{ card.items_count }} urun
+                    </div>
+                </div>
+                <div class="text-muted small">
+                    {% if card.order.order_created_at %}
+                    {{ card.order.order_created_at|date:"d M Y" }}
+                    {% else %}
+                    Tarih bilinmiyor
+                    {% endif %}
+                </div>
+            </div>
+            <div class="order-stepper mb-4" style="--progress: {{ card.progress }};">
+                {% for step in card.steps %}
+                <div class="order-step {{ step.state }}">
+                    <div class="order-step-dot"><i class="bi bi-{{ step.icon }}"></i></div>
+                    <div class="small fw-semibold">{{ step.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small">Kargo</div>
+                        <div class="fw-semibold">
+                            {% if card.tracking_number %}
+                            {{ card.carrier_name|default:"Ship entegre" }} {{ card.tracking_number }}
+                            {% else %}
+                            Bilgi yok
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small">Durum</div>
+                        <div class="fw-semibold">{{ card.carrier_status|default:card.status_label }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small">Son guncelleme</div>
+                        <div class="fw-semibold">
+                            {% if card.order.last_synced_at %}
+                            {{ card.order.last_synced_at|date:"d M Y H:i" }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endfor %}
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <h2 class="h6 mb-2">Henuz siparis yok</h2>
+            <p class="text-muted mb-0">Etsy siparislerini cekmek icin Sync now butonunu kullan.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

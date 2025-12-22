@@ -1,58 +1,67 @@
 {% extends "layout/base.html" %}
+
 {% block title %}Listings | Etsy Panel{% endblock %}
 {% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="h5 mb-1">Active Listings</h2>
+            <div class="text-muted small">Etsy'den aktif listing'leri çekip gösterir.</div>
+        </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h2 class="h5 mb-1">Active Listings</h2>
-        <div class="text-muted small">Etsy'den aktif listing'leri çekip gösterir.</div>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-primary">Sync Now</button>
+        </form>
     </div>
 
-    <form method="post">
-        {% csrf_token %}
-        <button class="btn btn-primary">Sync Now</button>
-    </form>
-</div>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
 
-{% if messages %}
-{% for message in messages %}
-<div class="alert alert-{{ message.tags }}">{{ message }}</div>
-{% endfor %}
-{% endif %}
+    <div class="row g-4">
+        {% for l in listings %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+            <div class="card listing-card h-100 shadow-sm">
+                <div class="ratio ratio-4x3 listing-media position-relative">
+                    {% if l.image_url %}
+                    <img src="{{ l.image_url }}" alt="{{ l.title|default:'Listing image' }}"
+                        class="w-100 h-100 object-fit-cover d-block" loading="lazy">
+                    {% else %}
+                    <div class="placeholder-image d-flex flex-column justify-content-center align-items-center text-muted">
+                        <i class="bi bi-card-image fs-1"></i>
+                        <span class="small text-uppercase fw-semibold">No media</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-1 text-truncate">
+                        {% if l.url %}
+                        <a href="{{ l.url }}" target="_blank" class="text-decoration-none text-dark">
+                            {{ l.title|default:"(No title)" }}
+                        </a>
 
-<div class="card shadow-sm rounded-4">
-    <div class="table-responsive">
-        <table class="table mb-0">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Price</th>
-                    <th>Qty</th>
-                    <th>URL</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for l in listings %}
-                <tr>
-                    <td>{{ l.etsy_listing_id }}</td>
-                    <td>{{ l.title }}</td>
-                    <td>
-                        {% if l.price_amount %}{{ l.price_amount }} {{ l.price_currency }}{% else %}-{% endif %}
-                    </td>
-                    <td>{{ l.quantity|default:"-" }}</td>
-                    <td>
-                        {% if l.url %}<a href="{{ l.url }}" target="_blank">Open</a>{% else %}-{% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-muted p-4">No listings yet. Click “Sync Now”.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% else %}
+                        {{ l.title|default:"(No title)" }}
+                        {% endif %}
+                    </h5>
+                    <div class="text-muted small mb-3">
+                        <span class="fw-semibold">{{ l.quantity|default:"-" }}</span> in stock
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center text-muted py-5">
+                    No listings yet. Click “Sync Now”.
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
-
 {% endblock %}
