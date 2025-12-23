@@ -92,26 +92,23 @@ main {
 }
 
 .order-stepper {
-  --progress: 0; /* 0-100 */
-  --dot-size: 32px;
-  --steps: 5; /* kaç step varsa */
+  --progress: 0;
 
   position: relative;
   display: grid;
-  grid-template-columns: repeat(var(--steps), 1fr);
+  grid-template-columns: repeat(5, 1fr);
   align-items: start;
   padding: 0.25rem 0 0.75rem;
 }
 
-/* çizgi: 1. kolonun ortasından başla, son kolonun ortasında bitir */
 .order-stepper::before {
   content: "";
   position: absolute;
-  top: calc(var(--dot-size) / 2);
+  top: 16px;
   height: 2px;
 
-  left: calc(100% / (2 * var(--steps)));
-  right: calc(100% / (2 * var(--steps)));
+  left: 10%;
+  right: 10%;
 
   background: linear-gradient(#1f1d17, #1f1d17) left /
       calc(var(--progress) * 1%) 100% no-repeat,
@@ -126,15 +123,14 @@ main {
   align-items: center;
   text-align: center;
 
-  /* flex:1 KALKTI (grid zaten dağıtıyor) */
-  padding: 0; /* padding'i kaldır; hizayı bozar */
+  padding: 0;
   color: #8a8276;
   gap: 0.35rem;
 }
 
 .order-step-dot {
-  width: var(--dot-size);
-  height: var(--dot-size);
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: 2px solid #d6d1c7;
   display: grid;
