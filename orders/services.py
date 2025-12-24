@@ -177,6 +177,11 @@ def sync_orders(user):
             etsy_order_id = receipt.get("receipt_id")
             if not etsy_order_id:
                 continue
+            existing_status = (
+                Order.objects.filter(etsy_order_id=etsy_order_id)
+                .values_list("status", flat=True)
+                .first()
+            )
 
             buyer_name = receipt.get("name") or ""
             buyer_email = receipt.get("buyer_email") or ""
@@ -206,6 +211,9 @@ def sync_orders(user):
                     "last_synced_at": timezone.now(),
                 },
             )
+            if existing_status == Order.Status.CLOSED and order.status != Order.Status.CLOSED:
+                order.status = Order.Status.CLOSED
+                order.save(update_fields=["status"])
 
             items = receipt.get("transactions") or []
             if items:
@@ -236,11 +244,11 @@ def sync_orders(user):
                     if ship_status.get("is_delivered"):
                         if shipment.delivered_at and not order.delivered_at:
                             order.delivered_at = shipment.delivered_at
-                        if order.status != Order.Status.DELIVERED:
+                        if order.status != Order.Status.CLOSED and order.status != Order.Status.DELIVERED:
                             order.status = Order.Status.DELIVERED
                             send_etsy_message(client, order)
                     elif ship_status.get("is_in_transit"):
-                        if order.status != Order.Status.DELIVERED:
+                        if order.status not in {Order.Status.DELIVERED, Order.Status.CLOSED}:
                             order.status = Order.Status.IN_TRANSIT
 
                 shipment.save()

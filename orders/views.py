@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
@@ -81,4 +81,18 @@ def sync_now(request):
         messages.success(request, f"{total} siparis senkronize edildi.")
     except Exception as exc:
         messages.error(request, f"Siparis senkronu basarisiz: {exc}")
+    return redirect("orders_home")
+
+
+@login_required
+@require_POST
+def close_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, owner=request.user)
+    if order.status != Order.Status.DELIVERED:
+        messages.error(request, "Sadece teslim edilen siparis kapatilabilir.")
+        return redirect("orders_home")
+
+    order.status = Order.Status.CLOSED
+    order.save(update_fields=["status"])
+    messages.success(request, "Siparis kapatildi olarak isaretlendi.")
     return redirect("orders_home")

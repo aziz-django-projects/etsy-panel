@@ -68,6 +68,14 @@
                     <div class="border rounded-3 p-3 h-100">
                         <div class="text-muted small">Durum</div>
                         <div class="fw-semibold">{{ card.carrier_status|default:card.status_label }}</div>
+                        {% if card.order.status == "delivered" %}
+                        <form method="post" action="{% url 'orders_close' card.order.id %}" class="mt-2">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-success btn-sm" type="submit">
+                                Mesaj gonderildi (Kapat)
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
