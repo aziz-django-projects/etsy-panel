@@ -75,6 +75,13 @@
                                 Mesaj gonderildi (Kapat)
                             </button>
                         </form>
+                        {% elif card.order.status == "closed" %}
+                        <form method="post" action="{% url 'orders_archive' card.order.id %}" class="mt-2">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-secondary btn-sm" type="submit">
+                                Arsive kaldir
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>

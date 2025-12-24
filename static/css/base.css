@@ -1,0 +1,57 @@
+:root {
+  /* Brand Colors */
+  --color-primary: #c46a4a; /* Warm Clay */
+  --color-primary-hover: #b45c3f;
+  --color-primary-soft: #f3e4df;
+
+  /* UI Neutrals */
+  --color-bg: #ffffff;
+  --color-muted: #e6dfd2;
+  --color-text: #1f1d17;
+
+  /* Status Colors */
+  --color-success: #7fa99b; /* sage */
+  --color-warning: #c46a4a;
+
+  /* Stepper Colors */
+  --step-active: var(--color-primary);
+  --step-inactive: #e6dfd2;
+  --step-line: #e6dfd2;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.btn-outline-primary {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  color: #fff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.badge-primary {
+  background-color: var(--color-primary);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}

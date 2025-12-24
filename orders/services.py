@@ -177,11 +177,13 @@ def sync_orders(user):
             etsy_order_id = receipt.get("receipt_id")
             if not etsy_order_id:
                 continue
-            existing_status = (
+            existing = (
                 Order.objects.filter(etsy_order_id=etsy_order_id)
-                .values_list("status", flat=True)
+                .values("status", "archived")
                 .first()
             )
+            existing_status = existing.get("status") if existing else None
+            existing_archived = existing.get("archived") if existing else False
 
             buyer_name = receipt.get("name") or ""
             buyer_email = receipt.get("buyer_email") or ""
@@ -214,6 +216,9 @@ def sync_orders(user):
             if existing_status == Order.Status.CLOSED and order.status != Order.Status.CLOSED:
                 order.status = Order.Status.CLOSED
                 order.save(update_fields=["status"])
+            if existing_archived and not order.archived:
+                order.archived = True
+                order.save(update_fields=["archived"])
 
             items = receipt.get("transactions") or []
             if items:

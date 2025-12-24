@@ -44,7 +44,11 @@ def _build_stepper(order):
 def order_list(request):
     recent_cutoff = timezone.now() - timezone.timedelta(days=30)
     orders = (
-        Order.objects.filter(owner=request.user, order_created_at__gte=recent_cutoff)
+        Order.objects.filter(
+            owner=request.user,
+            order_created_at__gte=recent_cutoff,
+            archived=False,
+        )
         .select_related("shipment")
         .prefetch_related("items")
         .order_by("-order_created_at", "-id")
@@ -95,4 +99,21 @@ def close_order(request, order_id):
     order.status = Order.Status.CLOSED
     order.save(update_fields=["status"])
     messages.success(request, "Siparis kapatildi olarak isaretlendi.")
+    return redirect("orders_home")
+
+
+@login_required
+@require_POST
+def archive_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, owner=request.user)
+    if order.status != Order.Status.CLOSED:
+        messages.error(request, "Sadece kapatilan siparis arsive alinabilir.")
+        return redirect("orders_home")
+    if order.archived:
+        messages.info(request, "Siparis zaten arsivde.")
+        return redirect("orders_home")
+
+    order.archived = True
+    order.save(update_fields=["archived"])
+    messages.success(request, "Siparis arsive alindi.")
     return redirect("orders_home")
