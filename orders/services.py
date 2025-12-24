@@ -1,10 +1,13 @@
-from django.utils import timezone
+import json
 from datetime import timezone as dt_timezone
+
+from django.utils import timezone
 
 from etsy.client import EtsyClient
 from etsy.models import EtsyAccount
 
 from .models import Order, OrderItem, Shipment
+from .shipentegra import ShipentegraClient
 
 
 def _ensure_shop(account, client):
@@ -40,6 +43,16 @@ def _extract_price(payload):
             return price.get("amount"), price.get("currency_code", "")
     return None, ""
 
+
+def _extract_tracking(receipt):
+    tracking_number = receipt.get("tracking_code")
+    carrier_name = receipt.get("carrier_name", "")
+    shipments = receipt.get("shipments") or []
+    if not tracking_number and shipments:
+        tracking_number = shipments[0].get("tracking_code") or shipments[0].get("tracking_number")
+        carrier_name = carrier_name or shipments[0].get("carrier_name", "")
+    return tracking_number or "", carrier_name or ""
+
 def _parse_ts(value):
     if value is None:
         return None
@@ -48,9 +61,89 @@ def _parse_ts(value):
     return value
 
 
-def fetch_ship_status(_tracking_number):
-    # TODO: Ship entegre API ile sorgu yapilacak.
-    return None
+def _parse_iso_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, (int, float)):
+        return timezone.datetime.fromtimestamp(value, tz=dt_timezone.utc)
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    try:
+        parsed = timezone.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = parsed.replace(tzinfo=dt_timezone.utc)
+    return parsed
+
+
+def _normalize_status(value):
+    return (value or "").strip().lower()
+
+
+DELIVERED_KEYWORDS = {
+    "delivered",
+    "completed",
+    "teslim",
+    "delivered_successfully",
+}
+IN_TRANSIT_KEYWORDS = {
+    "in_transit",
+    "in transit",
+    "yolda",
+    "out_for_delivery",
+    "out for delivery",
+    "shipped",
+}
+
+
+def _matches_keywords(value, keywords):
+    if not value:
+        return False
+    return any(keyword in value for keyword in keywords)
+
+
+def fetch_ship_status(tracking_number):
+    client = ShipentegraClient()
+    payload = client.get_shipment_activities(tracking_number)
+    if not payload:
+        return None
+    if payload.get("status") != "success":
+        return None
+
+    data = payload.get("data") or {}
+    status_text = data.get("status") or ""
+    summary_text = data.get("summary") or ""
+    activities = data.get("activities") or []
+    last_event = ""
+    if activities:
+        last_event = activities[-1].get("event") or ""
+
+    normalized = _normalize_status(" ".join([status_text, summary_text, last_event]))
+    delivered_at = _parse_iso_datetime(data.get("deliveryDate"))
+
+    is_delivered = _matches_keywords(normalized, DELIVERED_KEYWORDS)
+    is_in_transit = _matches_keywords(normalized, IN_TRANSIT_KEYWORDS)
+    if is_delivered:
+        is_in_transit = False
+    if not is_delivered:
+        delivered_at = None
+
+    status_display = status_text or summary_text or last_event or "Bilinmiyor"
+
+    return {
+        "status": status_display,
+        "normalized": normalized,
+        "delivered_at": delivered_at,
+        "is_delivered": is_delivered,
+        "is_in_transit": is_in_transit,
+        "raw": json.dumps(payload, ensure_ascii=True),
+    }
 
 
 def send_etsy_message(_client, _order):
@@ -127,11 +220,11 @@ def sync_orders(user):
                         price_currency=(item.get("price") or {}).get("currency_code", ""),
                     )
 
-            tracking_number = receipt.get("tracking_code", "")
+            tracking_number, carrier_name = _extract_tracking(receipt)
             if tracking_number:
                 shipment, _ = Shipment.objects.get_or_create(order=order)
                 shipment.tracking_number = tracking_number
-                shipment.carrier_name = receipt.get("carrier_name", "")
+                shipment.carrier_name = carrier_name
                 shipment.shipped_at = shipped_at
                 shipment.last_checked_at = timezone.now()
 
@@ -140,10 +233,15 @@ def sync_orders(user):
                     shipment.carrier_status = ship_status.get("status", "")
                     shipment.carrier_status_raw = ship_status.get("raw", "")
                     shipment.delivered_at = ship_status.get("delivered_at")
-                    if shipment.delivered_at:
-                        order.status = Order.Status.DELIVERED
-                        order.delivered_at = shipment.delivered_at
-                        send_etsy_message(client, order)
+                    if ship_status.get("is_delivered"):
+                        if shipment.delivered_at and not order.delivered_at:
+                            order.delivered_at = shipment.delivered_at
+                        if order.status != Order.Status.DELIVERED:
+                            order.status = Order.Status.DELIVERED
+                            send_etsy_message(client, order)
+                    elif ship_status.get("is_in_transit"):
+                        if order.status != Order.Status.DELIVERED:
+                            order.status = Order.Status.IN_TRANSIT
 
                 shipment.save()
                 order.save(update_fields=["status", "delivered_at"])
