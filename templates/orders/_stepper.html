@@ -1,0 +1,8 @@
+<div class="order-stepper mb-4" style="--progress: {{ card.progress }};">
+    {% for step in card.steps %}
+    <div class="order-step {{ step.state }}">
+        <div class="order-step-dot"><i class="bi bi-{{ step.icon }}"></i></div>
+        <div class="small fw-semibold">{{ step.label }}</div>
+    </div>
+    {% endfor %}
+</div>

@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.formats import date_format
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
@@ -24,7 +26,30 @@ STEP_STATE_LABELS = {
 }
 
 
-def _build_step_details(order, shipment, status, step_state):
+def _format_detail_value(value, value_format=None):
+    if value in (None, ""):
+        return "-"
+    if value_format and hasattr(value, "strftime"):
+        return date_format(value, value_format)
+    return value
+
+
+def _decorate_details(details, active_label):
+    for detail in details:
+        if detail["label"] == "Durum":
+            detail["display_label"] = "Aktif Durum"
+            detail["display_value"] = active_label
+            detail["is_status"] = True
+        else:
+            detail["display_label"] = detail["label"]
+            detail["display_value"] = _format_detail_value(
+                detail.get("value"), detail.get("value_format")
+            )
+            detail["is_status"] = False
+    return details
+
+
+def _build_step_details(order, shipment, status, step_state, active_label):
     if status == Order.Status.RECEIVED:
         dispatch_at = None
         if shipment and shipment.shipped_at:
@@ -32,7 +57,7 @@ def _build_step_details(order, shipment, status, step_state):
         elif order.shipped_at:
             dispatch_at = order.shipped_at
 
-        return [
+        details = [
             {
                 "label": "Dispatch tarihi",
                 "value": dispatch_at,
@@ -44,12 +69,14 @@ def _build_step_details(order, shipment, status, step_state):
                 "value": STEP_STATE_LABELS.get(step_state, "Beklemede"),
             },
         ]
+        return _decorate_details(details, active_label)
 
-    return [
+    details = [
         {"label": "Alan 1", "value": "Eklenecek"},
         {"label": "Alan 2", "value": "Eklenecek"},
         {"label": "Durum", "value": STEP_STATE_LABELS.get(step_state, "Beklemede")},
     ]
+    return _decorate_details(details, active_label)
 
 
 def _build_stepper(order, shipment):
@@ -74,7 +101,7 @@ def _build_stepper(order, shipment):
 
         if idx == active_index:
             step["details"] = _build_step_details(
-                order, shipment, status, step["state"]
+                order, shipment, status, step["state"], step["label"]
             )
 
     active_step = steps[active_index] if steps else None
@@ -102,6 +129,16 @@ def order_list(request):
         except Order.shipment.RelatedObjectDoesNotExist:
             shipment = None
         steps, progress, active_step = _build_stepper(order, shipment)
+
+        if active_step:
+            active_step["show_close_button"] = (
+                order.status == Order.Status.DELIVERED
+            )
+            active_step["show_archive_button"] = (
+                order.status == Order.Status.CLOSED
+            )
+            active_step["close_url"] = reverse("orders_close", args=[order.id])
+            active_step["archive_url"] = reverse("orders_archive", args=[order.id])
 
         cards.append(
             {

@@ -43,55 +43,8 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="order-stepper mb-4" style="--progress: {{ card.progress }};">
-                {% for step in card.steps %}
-                <div class="order-step {{ step.state }}">
-                    <div class="order-step-dot"><i class="bi bi-{{ step.icon }}"></i></div>
-                    <div class="small fw-semibold">{{ step.label }}</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% if card.active_step %}
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="text-muted small">Aktif adim</div>
-                <div class="small fw-semibold">{{ card.active_step.label }}</div>
-            </div>
-            <div class="row g-3">
-                {% for detail in card.active_step.details %}
-                <div class="col-12 col-md-4">
-                    <div class="border rounded-3 p-3 h-100">
-                        <div class="text-muted small">{{ detail.label }}</div>
-                        <div class="fw-semibold">
-                            {% if detail.value %}
-                            {% if detail.value_format %}
-                            {{ detail.value|date:detail.value_format }}
-                            {% else %}
-                            {{ detail.value }}
-                            {% endif %}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </div>
-                        {% if detail.label == "Durum" and card.order.status == "delivered" %}
-                        <form method="post" action="{% url 'orders_close' card.order.id %}" class="mt-2">
-                            {% csrf_token %}
-                            <button class="btn btn-outline-success btn-sm" type="submit">
-                                Mesaj gonderildi (Kapat)
-                            </button>
-                        </form>
-                        {% elif detail.label == "Durum" and card.order.status == "closed" %}
-                        <form method="post" action="{% url 'orders_archive' card.order.id %}" class="mt-2">
-                            {% csrf_token %}
-                            <button class="btn btn-outline-secondary btn-sm" type="submit">
-                                Arsive kaldir
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+            {% include "orders/_stepper.html" %}
+            {% include "orders/_details.html" %}
         </div>
     </section>
     {% endfor %}

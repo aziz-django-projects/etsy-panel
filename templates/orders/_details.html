@@ -1,0 +1,32 @@
+{% if card.active_step %}
+<div class="row g-3">
+    {% for detail in card.active_step.details %}
+    <div class="col-12 col-md-4">
+        <div class="border rounded-3 p-3 h-100">
+            {% if detail.is_status %}
+            <div class="text-muted small">{{ detail.display_label }}</div>
+            <div class="small fw-semibold">{{ detail.display_value }}</div>
+            {% if card.active_step.show_close_button %}
+            <form method="post" action="{{ card.active_step.close_url }}" class="mt-2">
+                {% csrf_token %}
+                <button class="btn btn-outline-success btn-sm" type="submit">
+                    Mesaj gonderildi (Kapat)
+                </button>
+            </form>
+            {% elif card.active_step.show_archive_button %}
+            <form method="post" action="{{ card.active_step.archive_url }}" class="mt-2">
+                {% csrf_token %}
+                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                    Arsive kaldir
+                </button>
+            </form>
+            {% endif %}
+            {% else %}
+            <div class="text-muted small">{{ detail.display_label }}</div>
+            <div class="fw-semibold">{{ detail.display_value }}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
