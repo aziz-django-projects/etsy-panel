@@ -17,8 +17,42 @@ STATUS_STEPS = [
 
 STATUS_LABELS = {step["status"]: step["label"] for step in STATUS_STEPS}
 
+STEP_STATE_LABELS = {
+    "is-complete": "Tamamlandi",
+    "is-active": "Islemde",
+    "": "Beklemede",
+}
 
-def _build_stepper(order):
+
+def _build_step_details(order, shipment, status, step_state):
+    if status == Order.Status.RECEIVED:
+        dispatch_at = None
+        if shipment and shipment.shipped_at:
+            dispatch_at = shipment.shipped_at
+        elif order.shipped_at:
+            dispatch_at = order.shipped_at
+
+        return [
+            {
+                "label": "Dispatch tarihi",
+                "value": dispatch_at,
+                "value_format": "d M Y",
+            },
+            {"label": "Yapilacaklar", "value": "Eklenecek"},
+            {
+                "label": "Durum",
+                "value": STEP_STATE_LABELS.get(step_state, "Beklemede"),
+            },
+        ]
+
+    return [
+        {"label": "Alan 1", "value": "Eklenecek"},
+        {"label": "Alan 2", "value": "Eklenecek"},
+        {"label": "Durum", "value": STEP_STATE_LABELS.get(step_state, "Beklemede")},
+    ]
+
+
+def _build_stepper(order, shipment):
     steps = [
         {key: value for key, value in step.items() if key != "status"}
         for step in STATUS_STEPS
@@ -30,6 +64,7 @@ def _build_stepper(order):
     progress = int(active_index / (len(steps) - 1) * 100)
 
     for idx, step in enumerate(steps):
+        status = STATUS_STEPS[idx]["status"]
         if idx < active_index:
             step["state"] = "is-complete"
         elif idx == active_index:
@@ -37,7 +72,13 @@ def _build_stepper(order):
         else:
             step["state"] = ""
 
-    return steps, progress
+        if idx == active_index:
+            step["details"] = _build_step_details(
+                order, shipment, status, step["state"]
+            )
+
+    active_step = steps[active_index] if steps else None
+    return steps, progress, active_step
 
 
 @login_required
@@ -55,18 +96,19 @@ def order_list(request):
     )
     cards = []
     for order in orders:
-        steps, progress = _build_stepper(order)
         items_count = len(order.items.all())
         try:
             shipment = order.shipment
         except Order.shipment.RelatedObjectDoesNotExist:
             shipment = None
+        steps, progress, active_step = _build_stepper(order, shipment)
 
         cards.append(
             {
                 "order": order,
                 "steps": steps,
                 "progress": progress,
+                "active_step": active_step,
                 "items_count": items_count,
                 "status_label": STATUS_LABELS.get(order.status, "Bilinmiyor"),
                 "tracking_number": shipment.tracking_number if shipment else "",
