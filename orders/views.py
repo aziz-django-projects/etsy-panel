@@ -69,6 +69,27 @@ def _build_step_details(order, shipment, status, step_state, active_label):
         ]
         return _decorate_details(details, active_label)
 
+    if status == Order.Status.SHIPPED:
+        shipped_at = None
+        if shipment and getattr(shipment, "shipped_at", None):
+            shipped_at = shipment.shipped_at
+        elif getattr(order, "shipped_at", None):
+            shipped_at = order.shipped_at
+
+        details = [
+            {
+                "label": "Kargoya Verilme Tarihi",
+                "value": shipped_at,
+                "value_format": "d M Y",
+            },
+            {"label": "Yapilacaklar", "value": "Eklenecek"},
+            {
+                "label": "Durum",
+                "value": Order.Status.SHIPPED,
+            },
+        ]
+        return _decorate_details(details, active_label)
+
     details = [
         {"label": "Alan 1", "value": "Eklenecek"},
         {"label": "Alan 2", "value": "Eklenecek"},
