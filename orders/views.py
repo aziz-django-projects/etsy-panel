@@ -75,6 +75,7 @@ def _build_step_details(order, shipment, status, step_state, active_label):
             shipped_at = shipment.shipped_at
         elif getattr(order, "shipped_at", None):
             shipped_at = order.shipped_at
+        carrier_status = shipment.carrier_status if shipment else ""
 
         details = [
             {
@@ -82,7 +83,7 @@ def _build_step_details(order, shipment, status, step_state, active_label):
                 "value": shipped_at,
                 "value_format": "d M Y",
             },
-            {"label": "Yapilacaklar", "value": "Eklenecek"},
+            {"label": "Kargo Durumu", "value": carrier_status},
             {
                 "label": "Durum",
                 "value": Order.Status.SHIPPED,
