@@ -190,6 +190,19 @@ def sync_orders(user):
             total_amount, currency = _extract_price(receipt)
             is_shipped = receipt.get("is_shipped")
 
+            items = receipt.get("transactions") or []
+            expected_ship_date = None
+            expected_candidates = []
+            for item in items:
+                expected_value = item.get("expected_ship_date")
+                if expected_value is None:
+                    expected_value = item.get("expected_ship_date_timestamp")
+                parsed = _parse_ts(expected_value)
+                if parsed:
+                    expected_candidates.append(parsed)
+            if expected_candidates:
+                expected_ship_date = min(expected_candidates)
+
             status = Order.Status.RECEIVED
             shipped_at = None
             if is_shipped:
@@ -210,6 +223,7 @@ def sync_orders(user):
                     "currency": currency,
                     "order_created_at": order_created_at,
                     "shipped_at": shipped_at,
+                    "expected_ship_date": expected_ship_date,
                     "last_synced_at": timezone.now(),
                 },
             )
@@ -220,7 +234,6 @@ def sync_orders(user):
                 order.archived = True
                 order.save(update_fields=["archived"])
 
-            items = receipt.get("transactions") or []
             if items:
                 order.items.all().delete()
                 for item in items:

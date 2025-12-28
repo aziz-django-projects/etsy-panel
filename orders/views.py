@@ -52,21 +52,19 @@ def _decorate_details(details, active_label):
 def _build_step_details(order, shipment, status, step_state, active_label):
     if status == Order.Status.RECEIVED:
         dispatch_at = None
-        if shipment and shipment.shipped_at:
-            dispatch_at = shipment.shipped_at
-        elif order.shipped_at:
-            dispatch_at = order.shipped_at
+        if getattr(order, "expected_ship_date", None):
+            dispatch_at = order.expected_ship_date
 
         details = [
             {
-                "label": "Dispatch tarihi",
+                "label": "Kargoya Verilmesi Gereken Tarih",
                 "value": dispatch_at,
                 "value_format": "d M Y",
             },
-            {"label": "Yapilacaklar", "value": "Eklenecek"},
+            {"label": "Yapilacaklar", "value": "Siparişi hazırla ve paketle"},
             {
                 "label": "Durum",
-                "value": STEP_STATE_LABELS.get(step_state, "Beklemede"),
+                "value": Order.Status.RECEIVED,
             },
         ]
         return _decorate_details(details, active_label)

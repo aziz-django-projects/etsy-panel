@@ -19,6 +19,7 @@ class Order(models.Model):
     order_created_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    expected_ship_date = models.DateTimeField(null=True, blank=True)
     last_synced_at = models.DateTimeField(null=True, blank=True)
     archived = models.BooleanField(default=False)
 
