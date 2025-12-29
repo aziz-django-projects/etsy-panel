@@ -30,7 +30,7 @@ def _parse_token_validity(value):
 
 class ShipentegraClient:
     def __init__(self):
-        self.base_url = settings.SHIPENTEGRA_BASE_URL.rstrip("/")
+        self.base_url = settings.SHIPENTEGRA_BASE_URL
         self.client_id = settings.SHIPENTEGRA_CLIENT_ID
         self.client_secret = settings.SHIPENTEGRA_CLIENT_SECRET
 
@@ -54,6 +54,7 @@ class ShipentegraClient:
 
         token = (data.get("data") or {}).get("accessToken")
         validity = (data.get("data") or {}).get("accessTokenValidity")
+        
         ttl = _parse_token_validity(validity)
         if token:
             cache.set(

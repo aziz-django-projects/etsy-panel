@@ -137,7 +137,7 @@ ETSY_SCOPES = os.getenv("ETSY_SCOPES", "")
 
 SHIPENTEGRA_CLIENT_ID = os.getenv("SHIPENTEGRA_CLIENT_ID", "")
 SHIPENTEGRA_CLIENT_SECRET = os.getenv("SHIPENTEGRA_CLIENT_SECRET", "")
-SHIPENTEGRA_BASE_URL = os.getenv("SHIPENTEGRA_BASE_URL", "https://publicapi.shipentegra.com/v1")
+SHIPENTEGRA_BASE_URL = os.getenv("SHIPENTEGRA_BASE_URL", "")
 
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
