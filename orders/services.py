@@ -100,9 +100,9 @@ def fetch_ship_status(tracking_number):
     delivered_at = _parse_iso_datetime(data.get("deliveryDate"))
 
     is_delivered = status_text.strip().upper() == "DELIVERED"
-    last_status = (activities[-1].get("status") or "") if activities else ""
+    last_status = (activities[0].get("status") or "") if activities else ""
     is_in_transit = status_text.strip().upper() == "IN TRANSIT" or bool(last_status.strip())
-    
+
     if is_delivered:
         is_in_transit = False
     if not is_delivered:
