@@ -81,33 +81,6 @@ def _parse_iso_datetime(value):
         parsed = parsed.replace(tzinfo=dt_timezone.utc)
     return parsed
 
-
-def _normalize_status(value):
-    return (value or "").strip().lower()
-
-
-DELIVERED_KEYWORDS = {
-    "delivered",
-    "completed",
-    "teslim",
-    "delivered_successfully",
-}
-IN_TRANSIT_KEYWORDS = {
-    "in_transit",
-    "in transit",
-    "yolda",
-    "out_for_delivery",
-    "out for delivery",
-    "shipped",
-}
-
-
-def _matches_keywords(value, keywords):
-    if not value:
-        return False
-    return any(keyword in value for keyword in keywords)
-
-
 def fetch_ship_status(tracking_number):
     client = ShipentegraClient()
     payload = client.get_shipment_activities(tracking_number)
@@ -124,32 +97,29 @@ def fetch_ship_status(tracking_number):
     if activities:
         last_event = activities[-1].get("event") or ""
 
-    normalized = _normalize_status(" ".join([status_text, summary_text, last_event]))
     delivered_at = _parse_iso_datetime(data.get("deliveryDate"))
 
-    is_delivered = _matches_keywords(normalized, DELIVERED_KEYWORDS)
-    is_in_transit = _matches_keywords(normalized, IN_TRANSIT_KEYWORDS)
+    is_delivered = status_text.strip().upper() == "DELIVERED"
+    last_status = (activities[-1].get("status") or "") if activities else ""
+    is_in_transit = status_text.strip().upper() == "IN TRANSIT" or bool(last_status.strip())
+    
     if is_delivered:
         is_in_transit = False
     if not is_delivered:
         delivered_at = None
 
-    status_display = status_text or summary_text or last_event or "Bilinmiyor"
-
     return {
-        "status": status_display,
-        "normalized": normalized,
+        "status": status_text,
         "delivered_at": delivered_at,
         "is_delivered": is_delivered,
         "is_in_transit": is_in_transit,
-        "raw": json.dumps(payload, ensure_ascii=True),
+        "summary": summary_text,
+        "last_event": last_event,
     }
-
 
 def send_etsy_message(_client, _order):
     # TODO: Etsy Messaging API ile teslim mesaji gonder.
     return False
-
 
 def sync_orders(user):
     account = EtsyAccount.objects.get(user=user)
