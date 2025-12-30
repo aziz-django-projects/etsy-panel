@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import timezone as dt_timezone
 
 from django.utils import timezone
@@ -8,6 +9,8 @@ from etsy.models import EtsyAccount
 
 from .models import Order, OrderItem, Shipment
 from .shipentegra import ShipentegraClient
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_shop(account, client):
@@ -99,12 +102,23 @@ def fetch_ship_status(tracking_number):
 
     delivery_value = data.get("deliveryDate") or data.get("delivery_date")
     delivered_at = _parse_iso_datetime(delivery_value)
-    print(
-        "fetch_ship_status deliveryDate:",
-        delivery_value,
-        "parsed delivered_at:",
-        delivered_at,
-    )
+
+    last_activity_value = None
+    if activities:
+        last_activity = activities[-1] or {}
+        for key in (
+            "date",
+            "eventDate",
+            "event_date",
+            "timestamp",
+            "createdAt",
+            "created_at",
+            "time",
+        ):
+            if last_activity.get(key):
+                last_activity_value = last_activity.get(key)
+                break
+    last_activity_at = _parse_iso_datetime(last_activity_value) or delivered_at
 
     is_delivered = status_text.strip().upper() == "DELIVERED"
     last_status = (activities[0].get("status") or "") if activities else ""
@@ -112,16 +126,16 @@ def fetch_ship_status(tracking_number):
 
     if is_delivered:
         is_in_transit = False
-    if not is_delivered:
-        delivered_at = None
 
     return {
         "status": status_text,
-        "delivered_at": delivered_at,
+        "delivered_at": delivered_at if is_delivered else None,
+        "last_activity_at": last_activity_at,
         "is_delivered": is_delivered,
         "is_in_transit": is_in_transit,
         "summary": summary_text,
         "last_event": last_event,
+        "raw": json.dumps(data, ensure_ascii=False),
     }
 
 def send_etsy_message(_client, _order):
@@ -235,7 +249,9 @@ def sync_orders(user):
                 if ship_status:
                     shipment.carrier_status = ship_status.get("status", "")
                     shipment.carrier_status_raw = ship_status.get("raw", "")
-                    shipment.delivered_at = ship_status.get("delivered_at")
+                    shipment.delivered_at = ship_status.get("delivered_at") or ship_status.get(
+                        "last_activity_at"
+                    )
                     if ship_status.get("is_delivered"):
                         if shipment.delivered_at and not order.delivered_at:
                             order.delivered_at = shipment.delivered_at
