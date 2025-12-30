@@ -109,6 +109,48 @@ def _build_step_details(order, shipment, status, step_state, active_label):
         ]
         return _decorate_details(details, active_label)
 
+    if status == Order.Status.DELIVERED:
+        delivered_at = None
+        if shipment and getattr(shipment, "delivered_at", None):
+            delivered_at = shipment.delivered_at
+        elif getattr(order, "delivered_at", None):
+            delivered_at = order.delivered_at
+
+        details = [
+            {
+                "label": "Teslim Tarihi",
+                "value": delivered_at,
+                "value_format": "d M Y",
+            },
+            {"label": "Mesaj Durumu", "value": ""},
+            {
+                "label": "Durum",
+                "value": Order.Status.DELIVERED,
+            },
+        ]
+        return _decorate_details(details, active_label)
+
+    if status == Order.Status.CLOSED:
+        delivered_at = None
+        if shipment and getattr(shipment, "delivered_at", None):
+            delivered_at = shipment.delivered_at
+        elif getattr(order, "delivered_at", None):
+            delivered_at = order.delivered_at
+
+        details = [
+            {
+                "label": "Teslim Tarihi",
+                "value": delivered_at,
+                "value_format": "d M Y",
+            },
+            {"label": "Arsiv Durumu", "value": ""},
+            {
+                "label": "Durum",
+                "value": Order.Status.CLOSED,
+            },
+        ]
+        return _decorate_details(details, active_label)
+
     details = [
         {"label": "Alan 1", "value": "Eklenecek"},
         {"label": "Alan 2", "value": "Eklenecek"},

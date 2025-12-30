@@ -100,8 +100,7 @@ def fetch_ship_status(tracking_number):
     if activities:
         last_event = activities[-1].get("event") or ""
 
-    delivery_value = data.get("deliveryDate") or data.get("delivery_date")
-    delivered_at = _parse_iso_datetime(delivery_value)
+    delivered_at = _parse_iso_datetime(data.get("deliveryDate"))
 
     last_activity_value = None
     if activities:

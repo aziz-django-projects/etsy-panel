@@ -6,14 +6,18 @@
             {% if detail.is_status %}
             <div class="text-muted small">{{ detail.display_label }}</div>
             <div class="small fw-semibold">{{ detail.display_value }}</div>
-            {% if card.active_step.show_close_button %}
+            {% else %}
+            <div class="text-muted small">{{ detail.display_label }}</div>
+            <div class="fw-semibold">{{ detail.display_value }}</div>
+            {% if detail.display_label == "Mesaj Durumu" and card.active_step.show_close_button %}
             <form method="post" action="{{ card.active_step.close_url }}" class="mt-2">
                 {% csrf_token %}
                 <button class="btn btn-outline-success btn-sm" type="submit">
                     Mesaj gonderildi (Kapat)
                 </button>
             </form>
-            {% elif card.active_step.show_archive_button %}
+            {% endif %}
+            {% if detail.display_label == "Arsiv Durumu" and card.active_step.show_archive_button %}
             <form method="post" action="{{ card.active_step.archive_url }}" class="mt-2">
                 {% csrf_token %}
                 <button class="btn btn-outline-secondary btn-sm" type="submit">
@@ -21,9 +25,6 @@
                 </button>
             </form>
             {% endif %}
-            {% else %}
-            <div class="text-muted small">{{ detail.display_label }}</div>
-            <div class="fw-semibold">{{ detail.display_value }}</div>
             {% endif %}
         </div>
     </div>
