@@ -91,6 +91,24 @@ def _build_step_details(order, shipment, status, step_state, active_label):
         ]
         return _decorate_details(details, active_label)
 
+    if status == Order.Status.IN_TRANSIT:
+        delivery_date = shipment.delivered_at if shipment else None
+        carrier_status = shipment.carrier_status if shipment else ""
+
+        details = [
+            {
+                "label": "Son activite tarihi",
+                "value": delivery_date,
+                "value_format": "d M Y",
+            },
+            {"label": "Kargo durumu", "value": carrier_status},
+            {
+                "label": "Durum",
+                "value": Order.Status.IN_TRANSIT,
+            },
+        ]
+        return _decorate_details(details, active_label)
+
     details = [
         {"label": "Alan 1", "value": "Eklenecek"},
         {"label": "Alan 2", "value": "Eklenecek"},
