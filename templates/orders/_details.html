@@ -2,10 +2,6 @@
     {% for detail in card.active_step.details %}
     <div class="col-12 col-md-4">
         <div class="border rounded-3 p-3 h-100">
-            {% if detail.is_status %}
-            <div class="text-muted small">{{ detail.display_label }}</div>
-            <div class="small fw-semibold">{{ detail.display_value }}</div>
-            {% else %}
             <div class="text-muted small">{{ detail.display_label }}</div>
             <div class="fw-semibold">{{ detail.display_value }}</div>
             {% if detail.display_label == "Mesaj Durumu" and card.active_step.show_close_button %}
@@ -23,7 +19,6 @@
                     Arsive kaldir
                 </button>
             </form>
-            {% endif %}
             {% endif %}
         </div>
     </div>

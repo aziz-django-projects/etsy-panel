@@ -39,17 +39,15 @@ def _decorate_details(details, active_label):
         if detail["label"] == "Durum":
             detail["display_label"] = "Aktif Durum"
             detail["display_value"] = active_label
-            detail["is_status"] = True
         else:
             detail["display_label"] = detail["label"]
             detail["display_value"] = _format_detail_value(
                 detail.get("value"), detail.get("value_format")
             )
-            detail["is_status"] = False
     return details
 
 
-def _build_step_details(order, shipment, status, step_state, active_label):
+def _build_step_details(order, shipment, status, active_label):
     if status == Order.Status.RECEIVED:
         dispatch_at = None
         if getattr(order, "expected_ship_date", None):
@@ -151,13 +149,6 @@ def _build_step_details(order, shipment, status, step_state, active_label):
         ]
         return _decorate_details(details, active_label)
 
-    details = [
-        {"label": "Alan 1", "value": "Eklenecek"},
-        {"label": "Alan 2", "value": "Eklenecek"},
-        {"label": "Durum", "value": STEP_STATE_LABELS.get(step_state, "Beklemede")},
-    ]
-    return _decorate_details(details, active_label)
-
 
 def _build_stepper(order, shipment):
     steps = [
@@ -181,7 +172,7 @@ def _build_stepper(order, shipment):
 
         if idx == active_index:
             step["details"] = _build_step_details(
-                order, shipment, status, step["state"], step["label"]
+                order, shipment, status, step["label"]
             )
 
     active_step = steps[active_index] if steps else None
