@@ -49,6 +49,7 @@ class Shipment(models.Model):
     carrier_status_raw = models.TextField(blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True)
     last_checked_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

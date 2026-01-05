@@ -49,9 +49,7 @@ def _decorate_details(details, active_label):
 
 def _build_step_details(order, shipment, status, active_label):
     if status == Order.Status.RECEIVED:
-        dispatch_at = None
-        if getattr(order, "expected_ship_date", None):
-            dispatch_at = order.expected_ship_date
+        dispatch_at = getattr(order, "expected_ship_date", None) if order else ""
 
         details = [
             {
@@ -59,7 +57,9 @@ def _build_step_details(order, shipment, status, active_label):
                 "value": dispatch_at,
                 "value_format": "d M Y",
             },
-            {"label": "Yapilacaklar", "value": "Siparişi hazırla ve paketle"},
+            {
+                "label": "Yapilacaklar", 
+                "value": "Siparişi hazırla ve paketle"},
             {
                 "label": "Durum",
                 "value": Order.Status.RECEIVED,
@@ -68,12 +68,9 @@ def _build_step_details(order, shipment, status, active_label):
         return _decorate_details(details, active_label)
 
     if status == Order.Status.SHIPPED:
-        shipped_at = None
-        if shipment and getattr(shipment, "shipped_at", None):
-            shipped_at = shipment.shipped_at
-        elif getattr(order, "shipped_at", None):
-            shipped_at = order.shipped_at
-        carrier_status = shipment.carrier_status if shipment else ""
+        shipped_at = getattr(shipment, "shipped_at", None) if shipment else ""
+        carrier_status = getattr(shipment, "carrier_status", None) if shipment else ""
+        tracking_number = getattr(shipment, "tracking_number", None) if shipment else ""
 
         details = [
             {
@@ -81,17 +78,20 @@ def _build_step_details(order, shipment, status, active_label):
                 "value": shipped_at,
                 "value_format": "d M Y",
             },
-            {"label": "Kargo Durumu", "value": carrier_status},
             {
-                "label": "Durum",
-                "value": Order.Status.SHIPPED,
+                "label": "Kargo Durumu", 
+                "value": carrier_status},
+            {
+                "label": "Kargo Takip Numarası",
+                "value": tracking_number,
             },
         ]
         return _decorate_details(details, active_label)
 
     if status == Order.Status.IN_TRANSIT:
-        delivery_date = shipment.delivered_at if shipment else None
-        carrier_status = shipment.carrier_status if shipment else ""
+        delivery_date = getattr(shipment, "last_activity_at", None) if shipment else ""
+        carrier_status = getattr(shipment, "carrier_status", None) if shipment else ""
+        tracking_number = getattr(shipment, "tracking_number", None) if shipment else ""
 
         details = [
             {
@@ -99,20 +99,18 @@ def _build_step_details(order, shipment, status, active_label):
                 "value": delivery_date,
                 "value_format": "d M Y",
             },
-            {"label": "Kargo durumu", "value": carrier_status},
             {
-                "label": "Durum",
-                "value": Order.Status.IN_TRANSIT,
+                "label": "Kargo durumu", 
+                "value": carrier_status},
+            {
+                "label": "Kargo Takip Numarası",
+                "value": tracking_number,
             },
         ]
         return _decorate_details(details, active_label)
 
     if status == Order.Status.DELIVERED:
-        delivered_at = None
-        if shipment and getattr(shipment, "delivered_at", None):
-            delivered_at = shipment.delivered_at
-        elif getattr(order, "delivered_at", None):
-            delivered_at = order.delivered_at
+        delivered_at = getattr(shipment, "delivered_at", None) if shipment else ""
 
         details = [
             {
@@ -120,7 +118,9 @@ def _build_step_details(order, shipment, status, active_label):
                 "value": delivered_at,
                 "value_format": "d M Y",
             },
-            {"label": "Mesaj Durumu", "value": ""},
+            {
+                "label": "Mesaj Durumu", 
+                "value": ""},
             {
                 "label": "Durum",
                 "value": Order.Status.DELIVERED,
@@ -129,11 +129,7 @@ def _build_step_details(order, shipment, status, active_label):
         return _decorate_details(details, active_label)
 
     if status == Order.Status.CLOSED:
-        delivered_at = None
-        if shipment and getattr(shipment, "delivered_at", None):
-            delivered_at = shipment.delivered_at
-        elif getattr(order, "delivered_at", None):
-            delivered_at = order.delivered_at
+        delivered_at = getattr(shipment, "delivered_at", None) if shipment else ""
 
         details = [
             {
@@ -141,7 +137,9 @@ def _build_step_details(order, shipment, status, active_label):
                 "value": delivered_at,
                 "value_format": "d M Y",
             },
-            {"label": "Arsiv Durumu", "value": ""},
+            {
+                "label": "Arsiv Durumu", 
+                "value": ""},
             {
                 "label": "Durum",
                 "value": Order.Status.CLOSED,

@@ -105,18 +105,8 @@ def fetch_ship_status(tracking_number):
     last_activity_value = None
     if activities:
         last_activity = activities[-1] or {}
-        for key in (
-            "date",
-            "eventDate",
-            "event_date",
-            "timestamp",
-            "createdAt",
-            "created_at",
-            "time",
-        ):
-            if last_activity.get(key):
-                last_activity_value = last_activity.get(key)
-                break
+        if last_activity.get("date"):
+            last_activity_value = last_activity.get("date")
     last_activity_at = _parse_iso_datetime(last_activity_value) or delivered_at
 
     is_delivered = status_text.strip().upper() == "DELIVERED"
@@ -248,6 +238,7 @@ def sync_orders(user):
                 if ship_status:
                     shipment.carrier_status = ship_status.get("status", "")
                     shipment.carrier_status_raw = ship_status.get("raw", "")
+                    shipment.last_activity_at = ship_status.get("last_activity_at")
                     shipment.delivered_at = ship_status.get("delivered_at") or ship_status.get(
                         "last_activity_at"
                     )

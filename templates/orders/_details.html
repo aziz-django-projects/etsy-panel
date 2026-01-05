@@ -3,7 +3,15 @@
     <div class="col-12 col-md-4">
         <div class="border rounded-3 p-3 h-100">
             <div class="text-muted small">{{ detail.display_label }}</div>
+            {% if detail.display_label == "Kargo Takip Numarası" and detail.display_value != "-" %}
+            <div class="fw-semibold">
+                <a href="https://track.shipentegra.com/?trackno={{ detail.display_value }}" target="_blank" rel="noopener">
+                    {{ detail.display_value }}
+                </a>
+            </div>
+            {% else %}
             <div class="fw-semibold">{{ detail.display_value }}</div>
+            {% endif %}
             {% if detail.display_label == "Mesaj Durumu" and card.active_step.show_close_button %}
             <form method="post" action="{{ card.active_step.close_url }}" class="mt-2">
                 {% csrf_token %}
