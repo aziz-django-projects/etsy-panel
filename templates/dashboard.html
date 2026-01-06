@@ -11,8 +11,74 @@
         <a class="btn btn-outline-primary btn-sm" href="/etsy/connect/">Connect Etsy</a>
     </div>
 </header>
-<div class="p-4 bg-white rounded-4 shadow-sm">
-    <h1 class="h4 mb-2">Etsy Yönetim Paneli</h1>
-    <p class="text-muted mb-0">Adım 1 tamam: ETSY ye bağlanarak aktif listeler çekildi.</p>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="h6 mb-1">Dusuk stok (3'un altinda)</h2>
+                <div class="text-muted small">Stock adedi 3'un altina dusen urunler.</div>
+            </div>
+            <span class="badge bg-danger-subtle text-danger-emphasis px-3 py-2">
+                {{ low_stock|length }}
+            </span>
+        </div>
+        {% if low_stock %}
+        <div class="row g-3 mt-1">
+            {% for l in low_stock %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 bg-light">
+                    <div class="text-truncate me-2">
+                        {% if l.url %}
+                        <a href="{{ l.url }}" target="_blank" class="text-decoration-none text-dark">
+                            {{ l.title|default:"(No title)" }}
+                        </a>
+                        {% else %}
+                        {{ l.title|default:"(No title)" }}
+                        {% endif %}
+                    </div>
+                    <span class="badge bg-warning text-dark">
+                        {{ l.quantity|default:"-" }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-muted small mt-2">Dusuk stokta urun yok.</div>
+        {% endif %}
+    </div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="h6 mb-1">Uzun sure hareketsiz siparisler (15+ gun)</h2>
+                <div class="text-muted small">Order tarihi ile son aktivite arasinda 15+ gun olanlar.</div>
+            </div>
+            <span class="badge bg-danger-subtle text-danger-emphasis px-3 py-2">
+                {{ stale_orders|length }}
+            </span>
+        </div>
+        {% if stale_orders %}
+        <div class="row g-3 mt-1">
+            {% for item in stale_orders %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <a class="d-flex align-items-center justify-content-between border rounded px-3 py-2 bg-light text-decoration-none text-dark"
+                    href="{% url 'orders_home' %}#order-{{ item.order.id }}">
+                    <div class="text-truncate me-2">
+                        <span class="fw-semibold">Order #{{ item.order.etsy_order_id }}</span>
+                        <div class="text-muted small">{{ item.order.buyer_name|default:"(No buyer)" }}</div>
+                    </div>
+                    <span class="badge bg-warning text-dark">
+                        {{ item.gap_days }}d
+                    </span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-muted small mt-2">15+ gun farkli siparis yok.</div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

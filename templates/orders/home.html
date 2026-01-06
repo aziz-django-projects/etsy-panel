@@ -26,7 +26,7 @@
 <div class="d-grid gap-4">
     {% if order_cards %}
     {% for card in order_cards %}
-    <section class="card shadow-sm border-0 rounded-4">
+    <section id="order-{{ card.order.id }}" class="card shadow-sm border-0 rounded-4">
         <div class="card-body px-5">
             {% include "orders/_summary.html" %}
             {% include "orders/_stepper.html" %}
