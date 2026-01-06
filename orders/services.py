@@ -104,7 +104,7 @@ def fetch_ship_status(tracking_number):
 
     last_activity_value = None
     if activities:
-        last_activity = activities[-1] or {}
+        last_activity = activities[0] or {}
         if last_activity.get("date"):
             last_activity_value = last_activity.get("date")
     last_activity_at = _parse_iso_datetime(last_activity_value) or delivered_at
