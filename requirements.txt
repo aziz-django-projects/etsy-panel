@@ -9,5 +9,5 @@ idna==3.11
 python-dotenv==1.2.1
 sqlparse==0.5.4
 typing_extensions==4.15.0
+whitenoise==6.6.0
 gunicorn
-whitenoise
