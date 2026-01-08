@@ -186,7 +186,7 @@ def order_list(request):
             order_created_at__gte=recent_cutoff,
             archived=False,
         )
-        .select_related("shipment")
+        .select_related("shipment", "buyer")
         .prefetch_related("items")
         .order_by("-order_created_at", "-id")
     )

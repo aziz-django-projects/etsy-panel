@@ -24,6 +24,7 @@ urlpatterns = [
     path("", DashboardView.as_view(), name="home"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("etsy/", include("etsy.urls")),
+    path("customers/", include("customers.urls")),
     path("listings/", include("listings.urls")),
     path("orders/", include("orders.urls")),
 ]

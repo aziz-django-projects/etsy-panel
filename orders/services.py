@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from etsy.client import EtsyClient
 from etsy.models import EtsyAccount
+from customers.models import Buyer
 
 from .models import Order, OrderItem, Shipment
 from .shipentegra import ShipentegraClient
@@ -55,6 +56,23 @@ def _extract_tracking(receipt):
         tracking_number = shipments[0].get("tracking_code") or shipments[0].get("tracking_number")
         carrier_name = carrier_name or shipments[0].get("carrier_name", "")
     return tracking_number or "", carrier_name or ""
+
+
+def _extract_country_code(receipt):
+    candidates = [
+        receipt.get("country_iso"),
+        (receipt.get("shipping_address") or {}).get("country_iso"),
+        (receipt.get("shipping_address") or {}).get("country_code"),
+        (receipt.get("shipping_address") or {}).get("country"),
+    ]
+    for value in candidates:
+        if not isinstance(value, str):
+            continue
+        value = value.strip()
+        if len(value) == 2 and value.isalpha():
+            return value.upper()
+    return ""
+
 
 def _parse_ts(value):
     if value is None:
@@ -167,6 +185,20 @@ def sync_orders(user):
 
             buyer_name = receipt.get("name") or ""
             buyer_email = receipt.get("buyer_email") or ""
+            buyer_user_id = receipt.get("buyer_user_id")
+            country_code = _extract_country_code(receipt)
+            buyer = None
+            if buyer_user_id:
+                buyer_defaults = {"last_seen_at": timezone.now()}
+                if buyer_name:
+                    buyer_defaults["display_name"] = buyer_name
+                if country_code:
+                    buyer_defaults["country_code"] = country_code
+                buyer, _ = Buyer.objects.update_or_create(
+                    owner=user,
+                    etsy_buyer_user_id=buyer_user_id,
+                    defaults=buyer_defaults,
+                )
             total_amount, currency = _extract_price(receipt)
             is_shipped = receipt.get("is_shipped")
 
@@ -197,6 +229,7 @@ def sync_orders(user):
                 defaults={
                     "owner": user,
                     "status": status,
+                    "buyer": buyer,
                     "buyer_name": buyer_name,
                     "buyer_email": buyer_email,
                     "total_amount": total_amount,

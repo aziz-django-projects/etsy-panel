@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from customers.models import Buyer
+
 
 class Order(models.Model):
     class Status(models.TextChoices):
@@ -12,6 +14,7 @@ class Order(models.Model):
 
     etsy_order_id = models.BigIntegerField(unique=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECEIVED)
+    buyer = models.ForeignKey(Buyer, null=True, blank=True, on_delete=models.SET_NULL)
     buyer_name = models.CharField(max_length=255, blank=True)
     buyer_email = models.EmailField(blank=True)
     total_amount = models.IntegerField(null=True, blank=True)

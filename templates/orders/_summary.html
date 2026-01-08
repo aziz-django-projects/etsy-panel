@@ -10,7 +10,16 @@
     </div>
     <div>
       <div class="text-muted small">
-        {{ card.order.buyer_name|default:"-" }}  
+        {% if card.order.buyer %}
+        <a href="{% url 'buyer_messages' card.order.buyer.id %}" target="_blank" rel="noopener" class="text-decoration-none">
+          {{ card.order.buyer.display_name|default:card.order.buyer_name|default:"-" }}
+        </a>
+        {% if card.order.buyer.country_code %}
+        <span class="badge text-bg-light border ms-2">{{ card.order.buyer.country_code }}</span>
+        {% endif %}
+        {% else %}
+        {{ card.order.buyer_name|default:"-" }}
+        {% endif %}
         <p>{{ card.items_count }} urun</p>
       </div>
     </div>

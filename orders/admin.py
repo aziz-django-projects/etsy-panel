@@ -15,7 +15,7 @@ class ShipmentInline(admin.StackedInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("etsy_order_id", "buyer_name", "status", "owner", "last_synced_at")
+    list_display = ("etsy_order_id", "buyer_name", "buyer", "status", "owner", "last_synced_at")
     list_filter = ("status",)
     search_fields = ("etsy_order_id", "buyer_name", "buyer_email")
     inlines = (OrderItemInline, ShipmentInline)
