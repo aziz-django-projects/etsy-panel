@@ -32,6 +32,8 @@ staticfiles/
 # Environment variables
 .env
 *.env
+.env.*
+!.env.example
 
 # Testing / coverage
 .pytest_cache/

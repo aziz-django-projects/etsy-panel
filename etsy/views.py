@@ -14,13 +14,28 @@ from .pkce import generate_code_verifier, generate_code_challenge, generate_stat
 AUTHORIZE_URL = "https://www.etsy.com/oauth/connect"
 TOKEN_URL = "https://api.etsy.com/v3/public/oauth/token"  # Etsy dokümanı :contentReference[oaicite:3]{index=3}
 
+
+def _parse_host(host: str):
+    parsed = urlparse(f"//{host}")
+    return parsed.hostname, parsed.port
+
+
 @login_required
 def connect(request):
     redirect_uri = settings.ETSY_REDIRECT_URI
     redirect_parts = urlparse(redirect_uri) if redirect_uri else None
     if redirect_parts and redirect_parts.netloc:
-        current_host = request.get_host()
-        if current_host != redirect_parts.netloc:
+        current_hostname, current_port = _parse_host(request.get_host())
+        redirect_hostname, redirect_port = redirect_parts.hostname, redirect_parts.port
+
+        host_mismatch = (
+            bool(current_hostname)
+            and bool(redirect_hostname)
+            and current_hostname != redirect_hostname
+        )
+        port_mismatch = bool(redirect_port) and current_port != redirect_port
+
+        if host_mismatch or port_mismatch:
             return redirect(f"{redirect_parts.scheme}://{redirect_parts.netloc}{request.get_full_path()}")
 
     verifier = generate_code_verifier()
@@ -99,4 +114,3 @@ def callback(request):
     account.save()
 
     return redirect("listings_home")
-

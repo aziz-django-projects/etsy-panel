@@ -17,7 +17,20 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load env files (later files override earlier ones).
 load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.local")
+load_dotenv(BASE_DIR / ".env.codespaces")
+
+
+def _split_env_csv(name: str):
+    raw = os.getenv(name, "")
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+IS_CODESPACES = os.getenv("CODESPACES", "").lower() == "true"
+DEFAULT_DEV_PORT = int(os.getenv("DJANGO_DEV_PORT", "8000"))
 
 
 # Quick-start development settings - unsuitable for production
@@ -29,11 +42,36 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
-allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "")
-ALLOWED_HOSTS = [h.strip() for h in allowed_hosts.split(",") if h.strip()] if not DEBUG else ["*"]
+ALLOWED_HOSTS = _split_env_csv("DJANGO_ALLOWED_HOSTS") if not DEBUG else ["*"]
 
-raw_csrf_origins = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "")
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(",") if o.strip()]
+CSRF_TRUSTED_ORIGINS = _split_env_csv("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+# Dev convenience: allow local origins when running in DEBUG.
+if DEBUG:
+    for origin in (
+        f"http://localhost:{DEFAULT_DEV_PORT}",
+        f"http://127.0.0.1:{DEFAULT_DEV_PORT}",
+    ):
+        if origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
+
+# Codespaces uses a reverse proxy + forwarded headers; add its public host/origin.
+if IS_CODESPACES:
+    codespace_name = os.getenv("CODESPACE_NAME", "")
+    forwarding_domain = os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "app.github.dev")
+    public_port = int(os.getenv("DJANGO_CODESPACES_PUBLIC_PORT", str(DEFAULT_DEV_PORT)))
+    if codespace_name:
+        public_host = f"{codespace_name}-{public_port}.{forwarding_domain}"
+        public_origin = f"https://{public_host}"
+        if not DEBUG and public_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(public_host)
+        if public_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(public_origin)
+
+# Codespaces/reverse-proxy friendly toggles (opt-in via env, default on in Codespaces).
+USE_X_FORWARDED_HOST = IS_CODESPACES or (os.getenv("DJANGO_USE_X_FORWARDED_HOST", "0") == "1")
+if IS_CODESPACES or (os.getenv("DJANGO_SECURE_PROXY_SSL_HEADER", "0") == "1"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 HAS_WHITENOISE = find_spec("whitenoise") is not None
 
