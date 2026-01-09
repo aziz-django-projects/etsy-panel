@@ -177,6 +177,15 @@ def _build_stepper(order, shipment):
     return steps, progress, active_step
 
 
+def _etsy_order_url(order: Order) -> str:
+    base_path = (
+        "https://www.etsy.com/your/orders/sold/new"
+        if order.status == Order.Status.RECEIVED
+        else "https://www.etsy.com/your/orders/sold/completed"
+    )
+    return f"{base_path}?order_id={order.etsy_order_id}"
+
+
 @login_required
 def order_list(request):
     recent_cutoff = timezone.now() - timezone.timedelta(days=30)
@@ -212,6 +221,7 @@ def order_list(request):
         cards.append(
             {
                 "order": order,
+                "etsy_order_url": _etsy_order_url(order),
                 "steps": steps,
                 "progress": progress,
                 "active_step": active_step,
