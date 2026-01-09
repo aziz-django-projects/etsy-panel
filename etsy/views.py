@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import httpx
 from django.conf import settings
@@ -16,13 +16,24 @@ TOKEN_URL = "https://api.etsy.com/v3/public/oauth/token"  # Etsy dokümanı :con
 
 @login_required
 def connect(request):
+    redirect_uri = settings.ETSY_REDIRECT_URI
+    redirect_parts = urlparse(redirect_uri) if redirect_uri else None
+    if redirect_parts and redirect_parts.netloc:
+        current_host = request.get_host()
+        if current_host != redirect_parts.netloc:
+            return redirect(f"{redirect_parts.scheme}://{redirect_parts.netloc}{request.get_full_path()}")
+
     verifier = generate_code_verifier()
     challenge = generate_code_challenge(verifier)
     state = generate_state()
 
-    # session’da sakla (DB’ye de saklayabilirdik)
-    request.session["etsy_oauth_state"] = state
-    request.session["etsy_code_verifier"] = verifier
+    # Session'da sakla. Tek state yerine birden fazla denemeyi destekle (prefetch/double-click vb.).
+    states = request.session.get("etsy_oauth_states") or {}
+    states[state] = verifier
+    if len(states) > 5:
+        for old_state in list(states.keys())[:-5]:
+            states.pop(old_state, None)
+    request.session["etsy_oauth_states"] = states
 
     params = {
         "response_type": "code",
@@ -44,14 +55,14 @@ def callback(request):
     if not code or not state:
         return HttpResponseBadRequest("Missing code/state")
 
-    expected_state = request.session.get("etsy_oauth_state")
-    verifier = request.session.get("etsy_code_verifier")
-    if not expected_state or state != expected_state or not verifier:
+    states = request.session.get("etsy_oauth_states") or {}
+    verifier = states.get(state)
+    if not verifier:
         return HttpResponseBadRequest("Invalid state (CSRF)")
 
-    # State’i tek kullanımlık yap
-    request.session.pop("etsy_oauth_state", None)
-    request.session.pop("etsy_code_verifier", None)
+    # State'i tek kullanimlik yap
+    states.pop(state, None)
+    request.session["etsy_oauth_states"] = states
 
     data = {
         "grant_type": "authorization_code",
