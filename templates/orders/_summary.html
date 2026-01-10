@@ -1,34 +1,32 @@
-
-  <div
-    class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3"
-  >
-    <div class="text-muted small">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+  <div class="d-flex align-items-center gap-2 text-muted small">
+    {% if card.image_url_75x75 %}
+    <img src="{{ card.image_url_75x75 }}" alt="Order item image" class="rounded-2" width="40" height="40"
+      loading="lazy">
+    {% endif %}
+    <div>
       <h2 class="h6 mb-1">
-        <a
-          href="{{ card.etsy_order_url }}"
-          target="_blank"
-          rel="noopener"
-          class="text-decoration-none"
-        >
+        <a href="{{ card.etsy_order_url }}" target="_blank" rel="noopener" class="text-decoration-none">
           Order #{{ card.order.etsy_order_id }}
         </a>
       </h2>
-      {% if card.order.order_created_at %} 
-      {{ card.order.order_created_at|date:"d M Y" }} {% else %} Tarih bilinmiyor 
+      {% if card.order.order_created_at %}
+      {{ card.order.order_created_at|date:"d M Y" }} {% else %} Tarih bilinmiyor
       {% endif %}
-    </div>
-    <div>
-      <div class="text-muted small">
-        {% if card.order.buyer %}
-        {{ card.order.buyer.display_name|default:card.order.buyer_name|default:"-" }}
-        {% if card.order.buyer.country_code %}
-        <span class="badge text-bg-light border ms-2">{{ card.order.buyer.country_code }}</span>
-        {% endif %}
-        {% else %}
-        {{ card.order.buyer_name|default:"-" }}
-        {% endif %}
-        <p>{{ card.items_count }} urun</p>
-      </div>
     </div>
   </div>
 
+  <div class="ms-auto text-end">
+    <div class="text-muted small">
+      {% if card.order.buyer %}
+      {{ card.order.buyer.display_name|default:card.order.buyer_name|default:"-" }}
+      {% if card.order.buyer.country_code %}
+      <span class="badge text-bg-light border ms-2">{{ card.order.buyer.country_code }}</span>
+      {% endif %}
+      {% else %}
+      {{ card.order.buyer_name|default:"-" }}
+      {% endif %}
+      <p class="mb-0">{{ card.items_count }} urun</p>
+    </div>
+  </div>
+</div>

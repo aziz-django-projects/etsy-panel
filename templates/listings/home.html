@@ -26,8 +26,8 @@
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2">
             <div class="card listing-card h-100 shadow-sm">
                 <div class="ratio ratio-4x3 listing-media position-relative">
-                    {% if l.image_url %}
-                    <img src="{{ l.image_url }}" alt="{{ l.title|default:'Listing image' }}"
+                    {% if l.image_url_170x135 %}
+                    <img src="{{ l.image_url_170x135 }}" alt="{{ l.title|default:'Listing image' }}"
                         class="w-100 h-100 object-fit-cover d-block" loading="lazy">
                     {% else %}
                     <div class="placeholder-image d-flex flex-column justify-content-center align-items-center text-muted">

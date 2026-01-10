@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .models import Order
 from .services import sync_orders
+from listings.models import Listing
 
 STATUS_STEPS = [
     {"status": Order.Status.RECEIVED, "label": "Siparis alindi", "icon": "check-lg"},
@@ -199,9 +200,27 @@ def order_list(request):
         .prefetch_related("items")
         .order_by("-order_created_at", "-id")
     )
+    listing_ids = set()
+    for order in orders:
+        for item in order.items.all():
+            if item.etsy_listing_id:
+                listing_ids.add(item.etsy_listing_id)
+
+    listing_images = {}
+    if listing_ids:
+        for listing in Listing.objects.filter(
+            owner=request.user, etsy_listing_id__in=listing_ids
+        ).values("etsy_listing_id", "image_url_75x75"):
+            listing_images[listing["etsy_listing_id"]] = listing["image_url_75x75"]
+
     cards = []
     for order in orders:
         items_count = len(order.items.all())
+        image_url_75x75 = ""
+        for item in order.items.all():
+            image_url_75x75 = listing_images.get(item.etsy_listing_id) or ""
+            if image_url_75x75:
+                break
         try:
             shipment = order.shipment
         except Order.shipment.RelatedObjectDoesNotExist:
@@ -226,6 +245,7 @@ def order_list(request):
                 "progress": progress,
                 "active_step": active_step,
                 "items_count": items_count,
+                "image_url_75x75": image_url_75x75,
                 "status_label": STATUS_LABELS.get(order.status, "Bilinmiyor"),
                 "tracking_number": shipment.tracking_number if shipment else "",
                 "carrier_name": shipment.carrier_name if shipment else "",

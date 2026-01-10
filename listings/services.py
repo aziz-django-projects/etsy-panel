@@ -44,14 +44,17 @@ def sync_active_listings(user):
             break
 
         for it in items:
-            image_url = ""
+            image_url_170x135 = ""
+            image_url_75x75 = ""
             try:
                 images_payload = client.get_listing_images(it["listing_id"])
                 image_results = images_payload.get("results", [])
                 if image_results:
-                    image_url = image_results[0].get("url_170x135", "")
+                    image_url_170x135 = image_results[0].get("url_170x135", "")
+                    image_url_75x75 = image_results[0].get("url_75x75", "")
             except Exception:
-                image_url = ""
+                image_url_170x135 = ""
+                image_url_75x75 = ""
 
             Listing.objects.update_or_create(
                 etsy_listing_id=it["listing_id"],
@@ -60,7 +63,8 @@ def sync_active_listings(user):
                     "title": it.get("title", ""),
                     "state": it.get("state", ""),
                     "url": it.get("url", ""),
-                    "image_url": image_url,
+                    "image_url_170x135": image_url_170x135,
+                    "image_url_75x75": image_url_75x75,
                     "quantity": it.get("quantity"),
                     "price_amount": (it.get("price") or {}).get("amount"),
                     "price_currency": (it.get("price") or {}).get("currency_code", ""),
