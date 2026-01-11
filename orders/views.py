@@ -1,3 +1,5 @@
+from datetime import timezone as dt_timezone
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -189,7 +191,7 @@ def _etsy_order_url(order: Order) -> str:
 
 @login_required
 def order_list(request):
-    recent_cutoff = timezone.now() - timezone.timedelta(days=30)
+    recent_cutoff = timezone.datetime(2026, 1, 1, tzinfo=dt_timezone.utc)
     orders = (
         Order.objects.filter(
             owner=request.user,

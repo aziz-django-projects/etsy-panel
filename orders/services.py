@@ -157,7 +157,9 @@ def sync_orders(user):
 
     offset = 0
     limit = 50
-    min_created = int((timezone.now() - timezone.timedelta(days=30)).timestamp())
+    min_created = int(
+        timezone.datetime(2026, 1, 1, tzinfo=dt_timezone.utc).timestamp()
+    )
     total = 0
 
     while True:

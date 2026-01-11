@@ -4,7 +4,7 @@
 <header
     class="topbar d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-white rounded-4 mb-4">
     <div>
-        <h1 class="h5 mb-0">Orders</h1>
+        <h1 class="h5 mb-0">Orders ({{ order_cards|length }} Orders)</h1>
         <small class="text-muted">Etsy'den gelen siparislerin akisini takip et.</small>
     </div>
     <form method="post" action="{% url 'orders_sync' %}">
