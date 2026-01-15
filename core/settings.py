@@ -70,6 +70,8 @@ if IS_CODESPACES:
         if public_origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(public_origin)
 
+HAS_WHITENOISE = find_spec("whitenoise") is not None
+
 # Application definition
 
 INSTALLED_APPS = [
