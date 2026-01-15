@@ -31,7 +31,6 @@ def _split_env_csv(name: str):
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
-IS_CODESPACES = os.getenv("CODESPACES", "").lower() == "true"
 DEFAULT_DEV_PORT = int(os.getenv("DJANGO_DEV_PORT", "8000"))
 
 
@@ -56,19 +55,6 @@ if DEBUG:
     ):
         if origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(origin)
-
-# Codespaces uses a reverse proxy + forwarded headers; add its public host/origin.
-if IS_CODESPACES:
-    codespace_name = os.getenv("CODESPACE_NAME", "")
-    forwarding_domain = os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "app.github.dev")
-    public_port = int(os.getenv("DJANGO_CODESPACES_PUBLIC_PORT", str(DEFAULT_DEV_PORT)))
-    if codespace_name:
-        public_host = f"{codespace_name}-{public_port}.{forwarding_domain}"
-        public_origin = f"https://{public_host}"
-        if not DEBUG and public_host not in ALLOWED_HOSTS:
-            ALLOWED_HOSTS.append(public_host)
-        if public_origin not in CSRF_TRUSTED_ORIGINS:
-            CSRF_TRUSTED_ORIGINS.append(public_origin)
 
 HAS_WHITENOISE = find_spec("whitenoise") is not None
 
