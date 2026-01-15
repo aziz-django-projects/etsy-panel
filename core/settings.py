@@ -22,9 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load env files (later files override earlier ones).
 load_dotenv(BASE_DIR / ".env")
-load_dotenv(BASE_DIR / ".env.local")
-load_dotenv(BASE_DIR / ".env.codespaces")
-
 
 def _split_env_csv(name: str):
     raw = os.getenv(name, "")
