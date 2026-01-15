@@ -70,13 +70,6 @@ if IS_CODESPACES:
         if public_origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(public_origin)
 
-# Codespaces/reverse-proxy friendly toggles (opt-in via env, default on in Codespaces).
-USE_X_FORWARDED_HOST = IS_CODESPACES or (os.getenv("DJANGO_USE_X_FORWARDED_HOST", "0") == "1")
-if IS_CODESPACES or (os.getenv("DJANGO_SECURE_PROXY_SSL_HEADER", "0") == "1"):
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-HAS_WHITENOISE = find_spec("whitenoise") is not None
-
 # Application definition
 
 INSTALLED_APPS = [
