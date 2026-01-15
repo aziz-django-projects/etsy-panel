@@ -31,9 +31,6 @@ def _split_env_csv(name: str):
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
-DEFAULT_DEV_PORT = int(os.getenv("DJANGO_DEV_PORT", "8000"))
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -46,15 +43,6 @@ DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = _split_env_csv("DJANGO_ALLOWED_HOSTS") if not DEBUG else ["*"]
 
 CSRF_TRUSTED_ORIGINS = _split_env_csv("DJANGO_CSRF_TRUSTED_ORIGINS")
-
-# Dev convenience: allow local origins when running in DEBUG.
-if DEBUG:
-    for origin in (
-        f"http://localhost:{DEFAULT_DEV_PORT}",
-        f"http://127.0.0.1:{DEFAULT_DEV_PORT}",
-    ):
-        if origin not in CSRF_TRUSTED_ORIGINS:
-            CSRF_TRUSTED_ORIGINS.append(origin)
 
 HAS_WHITENOISE = find_spec("whitenoise") is not None
 
