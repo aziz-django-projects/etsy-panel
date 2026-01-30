@@ -1,4 +1,5 @@
 {% extends "layout/base.html" %}
+{% load tz %}
 {% block title %}Dashboard | Etsy Panel{% endblock %}
 {% block content %}
 <header class="topbar d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-white rounded-4 mb-4">
@@ -7,7 +8,16 @@
         <small class="text-muted">Manage your Etsy integrations</small>
     </div>
     <div class="d-flex align-items-center gap-3">
-        <span class="text-muted">Hello, {{ user.username }}.</span>
+        <div class="text-end">
+            <div class="text-muted">Hello, {{ user.username }}.</div>
+            {% if etsy_account and etsy_account.last_connected_at %}
+            <div class="text-muted small">
+                Last connected: {{ etsy_account.last_connected_at|localtime|date:"Y-m-d H:i" }}
+            </div>
+            {% else %}
+            <div class="text-muted small">Last connected: -</div>
+            {% endif %}
+        </div>
         <a class="btn btn-outline-primary btn-sm" href="/etsy/connect/">Connect Etsy</a>
     </div>
 </header>

@@ -22,6 +22,9 @@ def _parse_host(host: str):
 
 @login_required
 def connect(request):
+    
+    # Normalize host/port before starting OAuth to avoid session and state mismatches
+    # when the redirect_uri uses a different domain or port.
     redirect_uri = settings.ETSY_REDIRECT_URI
     redirect_parts = urlparse(redirect_uri) if redirect_uri else None
     if redirect_parts and redirect_parts.netloc:

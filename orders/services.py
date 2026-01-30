@@ -151,7 +151,7 @@ def send_etsy_message(_client, _order):
 
 def sync_orders(user):
     account = EtsyAccount.objects.get(user=user)
-    client = EtsyClient(account.access_token)
+    client = EtsyClient(account)
 
     _ensure_shop(account, client)
 

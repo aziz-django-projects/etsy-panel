@@ -4,7 +4,7 @@ from .models import Listing
 
 def sync_active_listings(user):
     account = EtsyAccount.objects.get(user=user)
-    client = EtsyClient(account.access_token)
+    client = EtsyClient(account)
 
     # Shop_id yoksa önce shop’ları çek
     if not account.shop_id:

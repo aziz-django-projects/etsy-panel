@@ -3,15 +3,20 @@ from datetime import timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
+from etsy.models import EtsyAccount
 from listings.models import Listing
 from orders.models import Order
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = "dashboard.html"
+    template_name = "dashboard/dashboard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        try:
+            context["etsy_account"] = EtsyAccount.objects.get(user=self.request.user)
+        except EtsyAccount.DoesNotExist:
+            context["etsy_account"] = None
         context["low_stock"] = Listing.objects.filter(
             owner=self.request.user,
             quantity__lt=3,
