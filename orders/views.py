@@ -197,6 +197,7 @@ def order_list(request):
             owner=request.user,
             order_created_at__gte=recent_cutoff,
             archived=False,
+            canceled=False,
         )
         .select_related("shipment", "buyer")
         .prefetch_related("items")
@@ -279,7 +280,7 @@ def close_order(request, order_id):
     order.status = Order.Status.CLOSED
     order.save(update_fields=["status"])
     messages.success(request, "Siparis kapatildi olarak isaretlendi.")
-    return redirect("orders_home")
+    return redirect(f"{reverse('orders_home')}#order-{order.id}")
 
 
 @login_required

@@ -102,6 +102,11 @@ def _parse_iso_datetime(value):
         parsed = parsed.replace(tzinfo=dt_timezone.utc)
     return parsed
 
+def _normalize_status(value):
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
 def fetch_ship_status(tracking_number):
     client = ShipentegraClient()
     payload = client.get_shipment_activities(tracking_number)
@@ -112,11 +117,7 @@ def fetch_ship_status(tracking_number):
 
     data = payload.get("data") or {}
     status_text = data.get("status") or ""
-    summary_text = data.get("summary") or ""
     activities = data.get("activities") or []
-    last_event = ""
-    if activities:
-        last_event = activities[-1].get("event") or ""
 
     delivered_at = _parse_iso_datetime(data.get("deliveryDate"))
 
@@ -128,26 +129,13 @@ def fetch_ship_status(tracking_number):
     last_activity_at = _parse_iso_datetime(last_activity_value) or delivered_at
 
     is_delivered = status_text.strip().upper() == "DELIVERED"
-    last_status = (activities[0].get("status") or "") if activities else ""
-    is_in_transit = status_text.strip().upper() == "IN TRANSIT" or bool(last_status.strip())
-
-    if is_delivered:
-        is_in_transit = False
-
     return {
         "status": status_text,
         "delivered_at": delivered_at if is_delivered else None,
         "last_activity_at": last_activity_at,
         "is_delivered": is_delivered,
-        "is_in_transit": is_in_transit,
-        "summary": summary_text,
-        "last_event": last_event,
         "raw": json.dumps(data, ensure_ascii=False),
     }
-
-def send_etsy_message(_client, _order):
-    # TODO: Etsy Messaging API ile teslim mesaji gonder.
-    return False
 
 def sync_orders(user):
     account = EtsyAccount.objects.get(user=user)
@@ -202,7 +190,6 @@ def sync_orders(user):
                     defaults=buyer_defaults,
                 )
             total_amount, currency = _extract_price(receipt)
-            is_shipped = receipt.get("is_shipped")
 
             items = receipt.get("transactions") or []
             expected_ship_date = None
@@ -217,20 +204,20 @@ def sync_orders(user):
             if expected_candidates:
                 expected_ship_date = min(expected_candidates)
 
-            status = Order.Status.RECEIVED
             shipped_at = None
-            if is_shipped:
-                status = Order.Status.SHIPPED
-                shipments = receipt.get("shipments") or []
+            shipments = receipt.get("shipments") or []
+            if shipments:
                 shipped_at = _parse_ts(shipments[0].get("shipment_notification_timestamp"))
 
             order_created_at = _parse_ts(receipt.get("created_timestamp"))
+            receipt_status = _normalize_status(receipt.get("status"))
+            is_canceled = receipt_status == "canceled"
 
             order, _ = Order.objects.update_or_create(
                 etsy_order_id=etsy_order_id,
                 defaults={
                     "owner": user,
-                    "status": status,
+                    "status": existing_status or Order.Status.RECEIVED,
                     "buyer": buyer,
                     "buyer_name": buyer_name,
                     "buyer_email": buyer_email,
@@ -240,8 +227,12 @@ def sync_orders(user):
                     "shipped_at": shipped_at,
                     "expected_ship_date": expected_ship_date,
                     "last_synced_at": timezone.now(),
+                    "canceled": is_canceled,
                 },
             )
+            if order.canceled != is_canceled:
+                order.canceled = is_canceled
+                order.save(update_fields=["canceled"])
             if existing_status == Order.Status.CLOSED and order.status != Order.Status.CLOSED:
                 order.status = Order.Status.CLOSED
                 order.save(update_fields=["status"])
@@ -262,6 +253,7 @@ def sync_orders(user):
                     )
 
             tracking_number, carrier_name = _extract_tracking(receipt)
+            ship_status_value = ""
             if tracking_number:
                 shipment, _ = Shipment.objects.get_or_create(order=order)
                 shipment.tracking_number = tracking_number
@@ -271,6 +263,7 @@ def sync_orders(user):
 
                 ship_status = fetch_ship_status(tracking_number)
                 if ship_status:
+                    ship_status_value = _normalize_status(ship_status.get("status"))
                     shipment.carrier_status = ship_status.get("status", "")
                     shipment.carrier_status_raw = ship_status.get("raw", "")
                     shipment.last_activity_at = ship_status.get("last_activity_at")
@@ -280,15 +273,25 @@ def sync_orders(user):
                     if ship_status.get("is_delivered"):
                         if shipment.delivered_at and not order.delivered_at:
                             order.delivered_at = shipment.delivered_at
-                        if order.status != Order.Status.CLOSED and order.status != Order.Status.DELIVERED:
-                            order.status = Order.Status.DELIVERED
-                            send_etsy_message(client, order)
-                    elif ship_status.get("is_in_transit"):
-                        if order.status not in {Order.Status.DELIVERED, Order.Status.CLOSED}:
-                            order.status = Order.Status.IN_TRANSIT
 
                 shipment.save()
-                order.save(update_fields=["status", "delivered_at"])
+                if order.delivered_at:
+                    order.save(update_fields=["delivered_at"])
+
+            if order.status != Order.Status.CLOSED and not is_canceled:
+                status = None
+                if receipt_status == "paid":
+                    status = Order.Status.RECEIVED
+                elif receipt_status == "completed":
+                    if ship_status_value == "pending":
+                        status = Order.Status.SHIPPED
+                    elif ship_status_value in {"in transit", "in_transit"}:
+                        status = Order.Status.IN_TRANSIT
+                    elif ship_status_value == "delivered":
+                        status = Order.Status.DELIVERED
+                if status and order.status != status:
+                    order.status = status
+                    order.save(update_fields=["status"])
 
             total += 1
 
