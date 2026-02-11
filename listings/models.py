@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 
+
 class Listing(models.Model):
     etsy_listing_id = models.BigIntegerField(unique=True)
     title = models.CharField(max_length=255, blank=True)
@@ -19,3 +20,27 @@ class Listing(models.Model):
 
     def __str__(self):
         return f"{self.etsy_listing_id} - {self.title}"
+
+
+class ListingVariation(models.Model):
+    listing = models.ForeignKey(
+        Listing, related_name="variations", on_delete=models.CASCADE
+    )
+    etsy_product_id = models.BigIntegerField()
+    label = models.CharField(max_length=255, blank=True)
+    property_values_raw = models.JSONField(default=list, blank=True)
+    value_ids = models.JSONField(default=list, blank=True)
+    is_deleted = models.BooleanField(default=False)
+    raw = models.JSONField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["listing", "etsy_product_id"],
+                name="uniq_listing_variation_listing_product",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.listing_id} - {self.label or self.etsy_product_id}"

@@ -83,6 +83,10 @@ class EtsyClient:
         url = f"{API_BASE}/listings/{listing_id}/images"
         return self._get_json(url)
 
+    def get_listing_inventory(self, listing_id: int):
+        url = f"{API_BASE}/listings/{listing_id}/inventory"
+        return self._get_json(url)
+
     def get_shop_receipts(
         self,
         shop_id: int,

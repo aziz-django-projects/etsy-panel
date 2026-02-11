@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 from customers.models import Buyer
 
@@ -35,11 +36,23 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
+    etsy_transaction_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     etsy_listing_id = models.BigIntegerField(null=True, blank=True)
     title = models.CharField(max_length=255, blank=True)
     quantity = models.IntegerField(null=True, blank=True)
     price_amount = models.IntegerField(null=True, blank=True)
     price_currency = models.CharField(max_length=10, blank=True)
+    variation_label = models.CharField(max_length=255, blank=True)
+    variation_raw = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "etsy_transaction_id"],
+                condition=Q(etsy_transaction_id__isnull=False),
+                name="uniq_order_item_transaction",
+            )
+        ]
 
     def __str__(self):
         return f"{self.order_id} - {self.title}"

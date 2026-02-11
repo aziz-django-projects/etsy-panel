@@ -50,6 +50,26 @@
                     <div class="text-muted small mb-3">
                         <span class="fw-semibold">{{ l.quantity|default:"-" }}</span> in stock
                     </div>
+                    {% with variations=l.visible_variations %}
+                    {% if l.variation_count > 0 %}
+                    <button class="btn btn-outline-secondary btn-sm mt-auto" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#listing-variations-{{ l.id }}" aria-expanded="false"
+                        aria-controls="listing-variations-{{ l.id }}">
+                        Variations ({{ l.variation_count }})
+                    </button>
+                    <div class="collapse mt-2" id="listing-variations-{{ l.id }}">
+                        <div class="border rounded p-2 bg-light-subtle">
+                            <ul class="list-unstyled mb-0 small">
+                                {% for variation in variations %}
+                                <li class="py-1 border-bottom">
+                                    {{ variation.label }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
                 </div>
             </div>
         </div>

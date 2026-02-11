@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "etsy",
     "customers",
     "orders",
+    "inventory",
 ]
 
 MIDDLEWARE = [

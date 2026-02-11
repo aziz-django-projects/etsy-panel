@@ -1,6 +1,80 @@
+import logging
+
 from etsy.client import EtsyClient
 from etsy.models import EtsyAccount
-from .models import Listing
+
+from .models import Listing, ListingVariation
+
+logger = logging.getLogger(__name__)
+
+
+def _extract_variation_label(property_values):
+    labels = []
+    for property_value in property_values or []:
+        if not isinstance(property_value, dict):
+            continue
+        values = property_value.get("values") or []
+        if isinstance(values, list):
+            for value in values:
+                if value:
+                    labels.append(str(value))
+        if labels:
+            continue
+        value_ids = property_value.get("value_ids") or []
+        if isinstance(value_ids, list):
+            for value_id in value_ids:
+                if value_id is not None:
+                    labels.append(str(value_id))
+    return " / ".join(labels).strip()
+
+
+def _extract_value_ids(property_values):
+    value_ids = []
+    for property_value in property_values or []:
+        if not isinstance(property_value, dict):
+            continue
+        ids = property_value.get("value_ids") or []
+        if isinstance(ids, list):
+            for value_id in ids:
+                if value_id is not None:
+                    value_ids.append(value_id)
+    return value_ids
+
+
+def _sync_listing_variations(client, listing):
+    payload = client.get_listing_inventory(listing.etsy_listing_id)
+    products = payload.get("products", [])
+    seen_product_ids = set()
+
+    for product in products:
+        product_id = product.get("product_id")
+        if not product_id:
+            continue
+
+        property_values = product.get("property_values") or []
+        seen_product_ids.add(product_id)
+        label = _extract_variation_label(property_values)
+        if not label:
+            continue
+
+        ListingVariation.objects.update_or_create(
+            listing=listing,
+            etsy_product_id=product_id,
+            defaults={
+                "label": label,
+                "property_values_raw": property_values,
+                "value_ids": _extract_value_ids(property_values),
+                "is_deleted": bool(product.get("is_deleted")),
+                "raw": product,
+            },
+        )
+
+    ListingVariation.objects.filter(listing=listing).exclude(
+        etsy_product_id__in=seen_product_ids
+    ).delete()
+    ListingVariation.objects.filter(listing=listing, label="").delete()
+    return len(seen_product_ids)
+
 
 def sync_active_listings(user):
     account = EtsyAccount.objects.get(user=user)
@@ -35,7 +109,9 @@ def sync_active_listings(user):
     # Active listings çek (sayfalı)
     offset = 0
     limit = 50
-    total = 0
+    listings_synced = 0
+    variation_sync_ok = 0
+    variation_sync_failed = 0
 
     while True:
         payload = client.get_active_listings(shop_id=account.shop_id, limit=limit, offset=offset)
@@ -56,7 +132,7 @@ def sync_active_listings(user):
                 image_url_170x135 = ""
                 image_url_75x75 = ""
 
-            Listing.objects.update_or_create(
+            listing, _ = Listing.objects.update_or_create(
                 etsy_listing_id=it["listing_id"],
                 defaults={
                     "owner": user,
@@ -70,8 +146,20 @@ def sync_active_listings(user):
                     "price_currency": (it.get("price") or {}).get("currency_code", ""),
                 },
             )
-            total += 1
+            try:
+                _sync_listing_variations(client, listing)
+                variation_sync_ok += 1
+            except Exception:
+                variation_sync_failed += 1
+                logger.exception(
+                    "Variation sync failed for listing %s", listing.etsy_listing_id
+                )
+            listings_synced += 1
 
         offset += limit
 
-    return total
+    return {
+        "listings_synced": listings_synced,
+        "variation_sync_ok": variation_sync_ok,
+        "variation_sync_failed": variation_sync_failed,
+    }

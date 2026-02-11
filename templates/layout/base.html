@@ -40,6 +40,11 @@
                     <i class="bi bi-truck icon"></i>
                     Orders
                 </a>
+                <a href="/inventory/"
+                    class="sidebar-link {% if request.path|slice:':10' == '/inventory' %}active{% endif %}">
+                    <i class="bi bi-box-seam icon"></i>
+                    Inventory
+                </a>
             </nav>
         </aside>
 

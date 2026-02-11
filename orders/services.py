@@ -48,6 +48,32 @@ def _extract_price(payload):
     return None, ""
 
 
+def _extract_variation_label(variations):
+    if not variations:
+        return ""
+    values = []
+    for variation in variations:
+        if not isinstance(variation, dict):
+            continue
+        value = (
+            variation.get("formatted_value")
+            or variation.get("value")
+            or variation.get("value_name")
+            or variation.get("value_id")
+        )
+        if value:
+            values.append(str(value))
+            continue
+        name = (
+            variation.get("formatted_name")
+            or variation.get("property_name")
+            or variation.get("name")
+        )
+        if name:
+            values.append(str(name))
+    return " / ".join(values)
+
+
 def _extract_tracking(receipt):
     tracking_number = receipt.get("tracking_code")
     carrier_name = receipt.get("carrier_name", "")
@@ -167,11 +193,12 @@ def sync_orders(user):
                 continue
             existing = (
                 Order.objects.filter(etsy_order_id=etsy_order_id)
-                .values("status", "archived")
+                .values("status", "archived", "canceled")
                 .first()
             )
             existing_status = existing.get("status") if existing else None
             existing_archived = existing.get("archived") if existing else False
+            existing_canceled = existing.get("canceled") if existing else False
 
             buyer_name = receipt.get("name") or ""
             buyer_email = receipt.get("buyer_email") or ""
@@ -241,16 +268,34 @@ def sync_orders(user):
                 order.save(update_fields=["archived"])
 
             if items:
-                order.items.all().delete()
+                seen_item_ids = set()
                 for item in items:
-                    OrderItem.objects.create(
-                        order=order,
-                        etsy_listing_id=item.get("listing_id"),
-                        title=item.get("title", ""),
-                        quantity=item.get("quantity"),
-                        price_amount=(item.get("price") or {}).get("amount"),
-                        price_currency=(item.get("price") or {}).get("currency_code", ""),
-                    )
+                    variations = item.get("variations") or []
+                    defaults = {
+                        "etsy_listing_id": item.get("listing_id"),
+                        "title": item.get("title", ""),
+                        "quantity": item.get("quantity"),
+                        "price_amount": (item.get("price") or {}).get("amount"),
+                        "price_currency": (item.get("price") or {}).get(
+                            "currency_code", ""
+                        ),
+                        "variation_label": _extract_variation_label(variations),
+                        "variation_raw": variations,
+                    }
+                    tx_id = item.get("transaction_id")
+                    if tx_id:
+                        order_item, _ = OrderItem.objects.update_or_create(
+                            order=order,
+                            etsy_transaction_id=tx_id,
+                            defaults=defaults,
+                        )
+                    else:
+                        order_item = OrderItem.objects.create(order=order, **defaults)
+                    seen_item_ids.add(order_item.id)
+                if seen_item_ids:
+                    stale_items = order.items.exclude(id__in=seen_item_ids)
+                    stale_items = stale_items.exclude(stock_movements__isnull=False)
+                    stale_items.delete()
 
             tracking_number, carrier_name = _extract_tracking(receipt)
             ship_status_value = ""
@@ -292,6 +337,17 @@ def sync_orders(user):
                 if status and order.status != status:
                     order.status = status
                     order.save(update_fields=["status"])
+
+            try:
+                from inventory.services import apply_stock_for_order_transition
+
+                apply_stock_for_order_transition(
+                    order, previous_status=existing_status, previous_canceled=existing_canceled
+                )
+            except Exception:
+                logger.exception(
+                    "Stock adjustment failed for order %s", order.etsy_order_id
+                )
 
             total += 1
 
