@@ -6,11 +6,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import InventoryProduct, StockBucket, StockMovement
+from listings.models import Listing
 
 
 @login_required
 def inventory_home(request):
-    products = (
+    products = list(
         InventoryProduct.objects.filter(owner=request.user, is_active=True)
         .prefetch_related(
             Prefetch(
@@ -29,6 +30,17 @@ def inventory_home(request):
         )
         .order_by("name")
     )
+
+    listing_ids = [product.etsy_listing_id for product in products if product.etsy_listing_id]
+    listing_images = {}
+    if listing_ids:
+        for listing in Listing.objects.filter(
+            owner=request.user, etsy_listing_id__in=listing_ids
+        ).values("etsy_listing_id", "image_url_75x75"):
+            listing_images[listing["etsy_listing_id"]] = listing["image_url_75x75"]
+
+    for product in products:
+        product.image_url_75x75 = listing_images.get(product.etsy_listing_id, "")
 
     return render(
         request,

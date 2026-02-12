@@ -48,6 +48,8 @@ class InventoryVariation(models.Model):
         InventoryProduct, related_name="variations", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
+    etsy_property_ids = models.JSONField(default=list, blank=True)
+    etsy_value_ids = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:

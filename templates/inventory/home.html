@@ -16,9 +16,14 @@
     <div class="card shadow-sm mb-4 inventory-card" data-product-id="{{ product.id }}">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h3 class="h6 mb-1">{{ product.name }}</h3>
-                    <div class="text-muted small">Listing ID: {{ product.etsy_listing_id }}</div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if product.image_url_75x75 %}
+                    <img src="{{ product.image_url_75x75 }}" alt="{{ product.name|default:'Product image' }}" class="rounded-2" width="40" height="40" loading="lazy">
+                    {% endif %}
+                    <div>
+                        <h3 class="h6 mb-1">{{ product.name }}</h3>
+                        <div class="text-muted small">Listing ID: {{ product.etsy_listing_id }}</div>
+                    </div>
                 </div>
                 <button type="button" class="btn btn-outline-secondary btn-sm js-edit-toggle" data-product-id="{{ product.id }}" aria-pressed="false">
                     Duzenle

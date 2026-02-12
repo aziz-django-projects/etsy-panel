@@ -80,9 +80,63 @@ def seed_flower_banner(owner, etsy_listing_id: int, product_name: str):
             )
 
 
+def _extract_etsy_ids_from_order_variations(variations):
+    property_ids = []
+    value_ids = []
+    for variation in variations or []:
+        if not isinstance(variation, dict):
+            continue
+
+        property_id = variation.get("property_id")
+        if property_id is not None:
+            try:
+                property_ids.append(int(property_id))
+            except (TypeError, ValueError):
+                pass
+
+        value_id = variation.get("value_id")
+        if value_id is not None:
+            try:
+                value_ids.append(int(value_id))
+            except (TypeError, ValueError):
+                pass
+
+        value_id_list = variation.get("value_ids") or []
+        if isinstance(value_id_list, list):
+            for item in value_id_list:
+                if item is None:
+                    continue
+                try:
+                    value_ids.append(int(item))
+                except (TypeError, ValueError):
+                    continue
+
+    return sorted(set(property_ids)), sorted(set(value_ids))
+
+
 def _get_variation_for_item(order_item):
     label = (order_item.variation_label or "").strip()
-    if not order_item.etsy_listing_id or not label:
+    if not order_item.etsy_listing_id:
+        return None
+
+    property_ids, value_ids = _extract_etsy_ids_from_order_variations(
+        order_item.variation_raw or []
+    )
+    if value_ids:
+        qs = InventoryVariation.objects.select_related("product").filter(
+            product__owner=order_item.order.owner,
+            product__etsy_listing_id=order_item.etsy_listing_id,
+            product__is_active=True,
+            is_active=True,
+            etsy_value_ids=value_ids,
+        )
+        if property_ids:
+            qs = qs.filter(etsy_property_ids=property_ids)
+        hit = qs.first()
+        if hit:
+            return hit
+
+    if not label:
         return None
     return (
         InventoryVariation.objects.select_related("product")
