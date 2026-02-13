@@ -33,6 +33,7 @@ class InventoryVariationAdmin(admin.ModelAdmin):
 @admin.register(InventoryRecipeItem)
 class InventoryRecipeItemAdmin(admin.ModelAdmin):
     list_display = ("variation", "bucket", "quantity")
+    list_filter = ("variation__product",)
     search_fields = ("variation__name", "bucket__name")
 
 

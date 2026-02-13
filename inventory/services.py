@@ -1,84 +1,20 @@
-import re
-
 from django.db import transaction
 from django.db.models import F
 
 from .models import (
-    InventoryProduct,
     InventoryRecipeItem,
     InventoryVariation,
     StockBucket,
     StockMovement,
 )
 
-
-FLOWER_BANNER_VARIATIONS = [
-    "5 Banners - Small",
-    "6 Banners - Small",
-    "7 Banners - Small",
-    "8 Banners - Small",
-    "9 Banners - Small",
-    "10 Banners - Small",
-    "5 Banners - Large",
-    "6 Banners - Large",
-    "7 Banners - Large",
-    "8 Banners - Large",
-    "9 Banners - Large",
-    "10 Banners - Large",
-]
-
-
-def _pennant_counts(total_banners: int) -> dict[int, int]:
-    counts = {index: 0 for index in range(1, 6)}
-    for offset in range(total_banners):
-        bucket_index = (offset % 5) + 1
-        counts[bucket_index] += 1
-    return counts
-
-
-def _bucket_name(index: int, size_suffix: str) -> str:
-    return f"Pennant {index}-{size_suffix}"
-
-
-def seed_flower_banner(owner, etsy_listing_id: int, product_name: str):
-    product, _ = InventoryProduct.objects.update_or_create(
-        owner=owner,
-        etsy_listing_id=etsy_listing_id,
-        defaults={"name": product_name, "is_active": True},
-    )
-
-    buckets = {}
-    for suffix in ("S", "L"):
-        for index in range(1, 6):
-            bucket, _ = StockBucket.objects.update_or_create(
-                owner=owner,
-                product=product,
-                name=_bucket_name(index, suffix),
-                defaults={"is_active": True},
-            )
-            buckets[(index, suffix)] = bucket
-
-    for variation_name in FLOWER_BANNER_VARIATIONS:
-        variation, _ = InventoryVariation.objects.update_or_create(
-            product=product,
-            name=variation_name,
-            defaults={"is_active": True},
+def _manual_recipe_items_for_variation(order_item, variation):
+    return [
+        (item.bucket, int(item.quantity or 0))
+        for item in InventoryRecipeItem.objects.select_related("bucket").filter(
+            variation=variation
         )
-        suffix = "S"
-        if "large" in variation_name.lower():
-            suffix = "L"
-        match = re.match(r"^(\\d+)\\s+Banners\\s+-\\s+", variation_name)
-        if not match:
-            continue
-        total_banners = int(match.group(1))
-        counts = _pennant_counts(total_banners)
-        for index, amount in counts.items():
-            InventoryRecipeItem.objects.update_or_create(
-                variation=variation,
-                bucket=buckets[(index, suffix)],
-                defaults={"quantity": amount},
-            )
-
+    ]
 
 def _extract_etsy_ids_from_order_variations(variations):
     property_ids = []
@@ -165,27 +101,27 @@ def _apply_deduction_for_item(order_item):
     if not variation:
         return 0
 
-    created = 0
-    recipe_items = list(
-        InventoryRecipeItem.objects.select_related("bucket").filter(variation=variation)
-    )
-    if not recipe_items:
+    manual_items = _manual_recipe_items_for_variation(order_item, variation)
+    if not manual_items:
         return 0
 
+    created = 0
     with transaction.atomic():
-        for recipe_item in recipe_items:
-            delta = -(recipe_item.quantity * quantity)
+        for bucket, deduction_amount in manual_items:
+            if deduction_amount <= 0:
+                continue
+            delta = -(deduction_amount * quantity)
             movement, movement_created = StockMovement.objects.get_or_create(
                 owner=order_item.order.owner,
                 order=order_item.order,
                 order_item=order_item,
                 variation=variation,
-                bucket=recipe_item.bucket,
+                bucket=bucket,
                 reason=StockMovement.Reason.SHIP_DEDUCT,
                 defaults={"delta": delta},
             )
             if movement_created:
-                _apply_bucket_delta(recipe_item.bucket, delta)
+                _apply_bucket_delta(bucket, delta)
                 created += 1
     return created
 
