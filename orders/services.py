@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import timezone as dt_timezone
+from datetime import timedelta, timezone as dt_timezone
 
 from django.utils import timezone
 
@@ -171,9 +171,8 @@ def sync_orders(user):
 
     offset = 0
     limit = 50
-    min_created = int(
-        timezone.datetime(2026, 1, 1, tzinfo=dt_timezone.utc).timestamp()
-    )
+    min_created_dt = (timezone.now() - timedelta(days=30)).astimezone(dt_timezone.utc)
+    min_created = int(min_created_dt.timestamp())
     total = 0
 
     while True:
