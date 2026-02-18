@@ -171,7 +171,7 @@ def sync_orders(user):
 
     offset = 0
     limit = 50
-    min_created_dt = (timezone.now() - timedelta(days=30)).astimezone(dt_timezone.utc)
+    min_created_dt = (timezone.now() - timedelta(days=40)).astimezone(dt_timezone.utc)
     min_created = int(min_created_dt.timestamp())
     total = 0
 

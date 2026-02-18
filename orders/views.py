@@ -191,7 +191,7 @@ def _etsy_order_url(order: Order) -> str:
 
 @login_required
 def order_list(request):
-    recent_cutoff = timezone.now() - timedelta(days=30)
+    recent_cutoff = timezone.now() - timedelta(days=40)
     orders = (
         Order.objects.filter(
             owner=request.user,
