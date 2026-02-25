@@ -173,6 +173,39 @@ main {
   animation: step-pulse 1.8s ease-out infinite;
 }
 
+.order-card-content-shell {
+  --order-stepper-line-inset: 10%;
+  --order-stepper-visible-edge-offset: 18px;
+  width: 80%;
+  max-width: 80%;
+  margin-inline: auto;
+}
+
+.order-summary-wrap,
+.order-details-wrap {
+  padding-left: calc(
+    var(--order-stepper-line-inset) + var(--order-stepper-visible-edge-offset)
+  );
+  padding-right: calc(
+    var(--order-stepper-line-inset) + var(--order-stepper-visible-edge-offset)
+  );
+}
+
+.order-details-wrap .col-12 {
+  min-width: 0;
+}
+
+.order-details-wrap .fw-semibold,
+.order-details-wrap a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.order-details-wrap .btn {
+  white-space: normal;
+  width: 100%;
+}
+
 @keyframes step-pulse {
   0% {
     opacity: 0.7;
@@ -191,6 +224,23 @@ main {
 @media (max-width: 992px) {
   .order-stepper {
     gap: 0.5rem;
+  }
+
+  .order-details-wrap {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .order-card-content-shell {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .order-summary-wrap {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .order-step small {

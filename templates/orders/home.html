@@ -21,11 +21,52 @@
 </div>
 {% endif %}
 
+<style>
+    .orders-card-body {
+        --orders-stepper-shift: 4%;
+        --orders-stepper-dot-radius: 16px;
+    }
+
+    .orders-card-body .order-stepper {
+        margin-inline: calc(-1 * var(--orders-stepper-shift));
+    }
+
+    .orders-card-body .orders-align-pad {
+        /* Base align is 10% (first/last step centers in 5-column stepper) */
+        padding-inline: calc(10% - var(--orders-stepper-dot-radius) - var(--orders-stepper-shift));
+    }
+
+    .orders-details .col-12 {
+        min-width: 0;
+    }
+
+    .orders-details .fw-semibold,
+    .orders-details a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .orders-details .btn {
+        width: 100%;
+        white-space: normal;
+    }
+
+    @media (max-width: 992px) {
+        .orders-card-body .order-stepper {
+            margin-inline: 0;
+        }
+
+        .orders-card-body .orders-align-pad {
+            padding-inline: 0;
+        }
+    }
+</style>
+
 <div class="d-grid gap-4">
     {% if order_cards %}
     {% for card in order_cards %}
     <section id="order-{{ card.order.id }}" class="card shadow-sm border-0 rounded-4">
-        <div class="card-body px-5">
+        <div class="card-body orders-card-body">
             {% include "orders/_summary.html" %}
             {% include "orders/_stepper.html" %}
             {% include "orders/_details.html" %}

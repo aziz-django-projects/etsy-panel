@@ -4,9 +4,22 @@ from django.db.models import Case, F, IntegerField, Prefetch, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+import re
 
 from .models import InventoryProduct, StockBucket, StockMovement
 from listings.models import Listing
+
+
+_SMALL_BUCKET_RE = re.compile(r"-S(?:\b|\s|\()")
+_LARGE_BUCKET_RE = re.compile(r"-L(?:\b|\s|\()")
+
+
+def _is_small_bucket(name: str) -> bool:
+    return bool(_SMALL_BUCKET_RE.search(name or ""))
+
+
+def _is_large_bucket(name: str) -> bool:
+    return bool(_LARGE_BUCKET_RE.search(name or ""))
 
 
 @login_required
@@ -41,6 +54,17 @@ def inventory_home(request):
 
     for product in products:
         product.image_url_75x75 = listing_images.get(product.etsy_listing_id, "")
+        buckets = list(product.stock_buckets.all())
+        product.small_stock_buckets = [b for b in buckets if _is_small_bucket(b.name)]
+        product.large_stock_buckets = [b for b in buckets if _is_large_bucket(b.name)]
+        product.other_stock_buckets = [
+            b
+            for b in buckets
+            if not _is_small_bucket(b.name) and not _is_large_bucket(b.name)
+        ]
+        product.has_size_groups = bool(
+            product.small_stock_buckets or product.large_stock_buckets
+        )
 
     return render(
         request,

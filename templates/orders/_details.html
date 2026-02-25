@@ -1,34 +1,36 @@
-<div class="row g-3">
-    {% for detail in card.active_step.details %}
-    <div class="col-12 col-md-4">
-        <div class="border rounded-3 p-3 h-100">
-            <div class="text-muted small">{{ detail.display_label }}</div>
-            {% if detail.display_label == "Kargo Takip Numarası" and detail.display_value != "-" %}
-            <div class="fw-semibold">
-                <a href="https://track.shipentegra.com/?trackno={{ detail.display_value }}" target="_blank" rel="noopener">
-                    {{ detail.display_value }}
-                </a>
+<div class="orders-align-pad orders-details">
+    <div class="row g-3">
+        {% for detail in card.active_step.details %}
+        <div class="col-12 col-md-4">
+            <div class="border rounded-3 p-3 h-100">
+                <div class="text-muted small">{{ detail.display_label }}</div>
+                {% if detail.display_label == "Kargo Takip Numarası" and detail.display_value != "-" %}
+                <div class="fw-semibold">
+                    <a href="https://track.shipentegra.com/?trackno={{ detail.display_value }}" target="_blank" rel="noopener">
+                        {{ detail.display_value }}
+                    </a>
+                </div>
+                {% else %}
+                <div class="fw-semibold">{{ detail.display_value }}</div>
+                {% endif %}
+                {% if detail.display_label == "Mesaj Durumu" and card.active_step.show_close_button %}
+                <form method="post" action="{{ card.active_step.close_url }}" class="mt-2">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-success btn-sm" type="submit">
+                        Mesaj gonderildi (Kapat)
+                    </button>
+                </form>
+                {% endif %}
+                {% if detail.display_label == "Arsiv Durumu" and card.active_step.show_archive_button %}
+                <form method="post" action="{{ card.active_step.archive_url }}" class="mt-2">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">
+                        Arsive kaldir
+                    </button>
+                </form>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="fw-semibold">{{ detail.display_value }}</div>
-            {% endif %}
-            {% if detail.display_label == "Mesaj Durumu" and card.active_step.show_close_button %}
-            <form method="post" action="{{ card.active_step.close_url }}" class="mt-2">
-                {% csrf_token %}
-                <button class="btn btn-outline-success btn-sm" type="submit">
-                    Mesaj gonderildi (Kapat)
-                </button>
-            </form> 
-            {% endif %}
-            {% if detail.display_label == "Arsiv Durumu" and card.active_step.show_archive_button %}
-            <form method="post" action="{{ card.active_step.archive_url }}" class="mt-2">
-                {% csrf_token %}
-                <button class="btn btn-outline-secondary btn-sm" type="submit">
-                    Arsive kaldir
-                </button>
-            </form>
-            {% endif %}
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>

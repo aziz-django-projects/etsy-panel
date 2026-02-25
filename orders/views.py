@@ -218,12 +218,19 @@ def order_list(request):
 
     cards = []
     for order in orders:
-        items_count = len(order.items.all())
+        order_items = list(order.items.all())
+        items_count = len(order_items)
         image_url_75x75 = ""
-        for item in order.items.all():
+        for item in order_items:
             image_url_75x75 = listing_images.get(item.etsy_listing_id) or ""
             if image_url_75x75:
                 break
+        variation_labels = []
+        for item in order_items:
+            label = (item.variation_label or "").strip()
+            if label and label not in variation_labels:
+                variation_labels.append(label)
+        variation_summary = " | ".join(variation_labels)
         try:
             shipment = order.shipment
         except Order.shipment.RelatedObjectDoesNotExist:
@@ -249,6 +256,7 @@ def order_list(request):
                 "active_step": active_step,
                 "items_count": items_count,
                 "image_url_75x75": image_url_75x75,
+                "variation_summary": variation_summary,
                 "status_label": STATUS_LABELS.get(order.status, "Bilinmiyor"),
                 "tracking_number": shipment.tracking_number if shipment else "",
                 "carrier_name": shipment.carrier_name if shipment else "",
