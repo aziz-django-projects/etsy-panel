@@ -18,84 +18,40 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
                     {% if product.image_url_75x75 %}
-                    <img src="{{ product.image_url_75x75 }}" alt="{{ product.name|default:'Product image' }}" class="rounded-2" width="40" height="40" loading="lazy">
+                    <img src="{{ product.image_url_75x75 }}" alt="{{ product.name|default:'Product image' }}"
+                        class="rounded-2" width="40" height="40" loading="lazy">
                     {% endif %}
                     <div>
                         <h3 class="h6 mb-1">{{ product.name }}</h3>
                         <div class="text-muted small">Listing ID: {{ product.etsy_listing_id }}</div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm js-edit-toggle" data-product-id="{{ product.id }}" aria-pressed="false">
+                <button type="button" class="btn btn-outline-secondary btn-sm js-edit-toggle"
+                    data-product-id="{{ product.id }}" aria-pressed="false">
                     Duzenle
                 </button>
             </div>
 
             {% if product.stock_buckets.all|length %}
-                {% if product.has_size_groups %}
-                <div class="d-flex flex-column gap-3">
-                    {% if product.small_stock_buckets %}
-                    <div>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for bucket in product.small_stock_buckets %}
-                            <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
-                                <div class="fw-semibold small">{{ bucket.name }}</div>
-                                <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
-                                    <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="delta" value="-1">
-                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
-                                    </form>
-                                    <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
-                                    <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="delta" value="1">
-                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
-                                    </form>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if product.large_stock_buckets %}
-                    <div>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for bucket in product.large_stock_buckets %}
-                            <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
-                                <div class="fw-semibold small">{{ bucket.name }}</div>
-                                <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
-                                    <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="delta" value="-1">
-                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
-                                    </form>
-                                    <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
-                                    <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="delta" value="1">
-                                        <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
-                                    </form>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if product.other_stock_buckets %}
+            {% if product.has_size_groups %}
+            <div class="d-flex flex-column gap-3">
+                {% if product.small_stock_buckets %}
+                <div>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for bucket in product.other_stock_buckets %}
+                        {% for bucket in product.small_stock_buckets %}
                         <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
                             <div class="fw-semibold small">{{ bucket.name }}</div>
                             <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
-                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                    class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                     {% csrf_token %}
                                     <input type="hidden" name="delta" value="-1">
                                     <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                                 </form>
-                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
-                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
+                                    bucket.quantity }}</div>
+                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                    class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                     {% csrf_token %}
                                     <input type="hidden" name="delta" value="1">
                                     <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
@@ -104,21 +60,53 @@
                         </div>
                         {% endfor %}
                     </div>
-                    {% endif %}
                 </div>
-                {% else %}
+                {% endif %}
+
+                {% if product.large_stock_buckets %}
+                <div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for bucket in product.large_stock_buckets %}
+                        <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
+                            <div class="fw-semibold small">{{ bucket.name }}</div>
+                            <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
+                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                    class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delta" value="-1">
+                                    <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
+                                </form>
+                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
+                                    bucket.quantity }}</div>
+                                <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                    class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delta" value="1">
+                                    <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if product.other_stock_buckets %}
                 <div class="d-flex flex-wrap gap-2">
-                    {% for bucket in product.stock_buckets.all %}
+                    {% for bucket in product.other_stock_buckets %}
                     <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
                         <div class="fw-semibold small">{{ bucket.name }}</div>
                         <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
-                            <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                            <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                 {% csrf_token %}
                                 <input type="hidden" name="delta" value="-1">
                                 <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                             </form>
-                            <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
-                            <form method="post" action="{% url 'inventory_adjust' bucket.id %}" class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                            <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
+                                bucket.quantity }}</div>
+                            <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                                class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                 {% csrf_token %}
                                 <input type="hidden" name="delta" value="1">
                                 <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
@@ -128,6 +116,32 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+            </div>
+            {% else %}
+            <div class="d-flex flex-wrap gap-2">
+                {% for bucket in product.stock_buckets.all %}
+                <div class="border rounded bg-light px-2 py-2 text-center" style="width: 104px;">
+                    <div class="fw-semibold small">{{ bucket.name }}</div>
+                    <div class="d-flex align-items-center justify-content-center gap-1 mt-2">
+                        <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                            class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="delta" value="-1">
+                            <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
+                        </form>
+                        <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity
+                            }}</div>
+                        <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
+                            class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="delta" value="1">
+                            <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">+</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             {% else %}
             <div class="text-muted">Stok alani yok.</div>
             {% endif %}
@@ -146,6 +160,7 @@
     .inventory-card .stock-control {
         display: none;
     }
+
     .inventory-card.editing .stock-control {
         display: inline-block;
     }
