@@ -48,8 +48,7 @@
                                     <input type="hidden" name="delta" value="-1">
                                     <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                                 </form>
-                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
-                                    bucket.quantity }}</div>
+                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
                                 <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
                                     class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                     {% csrf_token %}
@@ -76,8 +75,7 @@
                                     <input type="hidden" name="delta" value="-1">
                                     <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                                 </form>
-                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
-                                    bucket.quantity }}</div>
+                                <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
                                 <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
                                     class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                     {% csrf_token %}
@@ -103,8 +101,7 @@
                                 <input type="hidden" name="delta" value="-1">
                                 <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                             </form>
-                            <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{
-                                bucket.quantity }}</div>
+                            <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
                             <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
                                 class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                                 {% csrf_token %}
@@ -129,8 +126,7 @@
                             <input type="hidden" name="delta" value="-1">
                             <button class="btn btn-outline-secondary btn-sm px-2 py-0" type="submit">-</button>
                         </form>
-                        <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity
-                            }}</div>
+                        <div class="fs-4 fw-bold px-1 js-stock-qty" data-bucket-id="{{ bucket.id }}">{{ bucket.quantity }}</div>
                         <form method="post" action="{% url 'inventory_adjust' bucket.id %}"
                             class="js-stock-adjust stock-control" data-bucket-id="{{ bucket.id }}">
                             {% csrf_token %}
