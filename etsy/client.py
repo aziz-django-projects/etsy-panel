@@ -7,6 +7,10 @@ TOKEN_URL = "https://api.etsy.com/v3/public/oauth/token"
 REFRESH_SAFETY_SECONDS = 300
 
 
+class EtsyAuthError(RuntimeError):
+    pass
+
+
 class EtsyClient:
     def __init__(self, account):
         self.account = account
@@ -27,9 +31,15 @@ class EtsyClient:
         )
         return timezone.now() >= refresh_at
 
+    def _raise_reconnect_required(self, detail=None):
+        message = "Etsy oturumu suresi dolmus. Etsy hesabini yeniden baglayin."
+        if detail:
+            message = f"{message} ({detail})"
+        raise EtsyAuthError(message)
+
     def _refresh_access_token(self):
         if not self.account.refresh_token:
-            return False
+            self._raise_reconnect_required("refresh token missing")
         data = {
             "grant_type": "refresh_token",
             "client_id": settings.ETSY_CLIENT_ID,
@@ -37,7 +47,20 @@ class EtsyClient:
         }
         with httpx.Client(timeout=20) as client:
             resp = client.post(TOKEN_URL, data=data)
-            resp.raise_for_status()
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                detail = None
+                try:
+                    payload = resp.json()
+                except ValueError:
+                    payload = {}
+                error = payload.get("error")
+                description = payload.get("error_description")
+                if error == "invalid_grant":
+                    detail = description or error
+                    self._raise_reconnect_required(detail)
+                raise exc
             payload = resp.json()
 
         self.access_token = payload["access_token"]
@@ -51,6 +74,9 @@ class EtsyClient:
         return True
 
     def _ensure_access_token(self):
+        if self.account.expires_at and timezone.now() >= self.account.expires_at:
+            if not self.account.refresh_token:
+                self._raise_reconnect_required("refresh token missing")
         if self._should_refresh():
             self._refresh_access_token()
 

@@ -74,5 +74,7 @@ class ShipentegraClient:
         params = {"trackingNumber": tracking_number}
         with httpx.Client(timeout=20) as client:
             response = client.get(url, headers=headers, params=params)
+            if response.status_code == 404:
+                return None
             response.raise_for_status()
             return response.json()
