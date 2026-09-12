@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def _extract_variation_label(property_values):
+    """Varyasyon değerlerini ekranda gösterilecek tek bir etikete dönüştür."""
     labels = []
     for property_value in property_values or []:
         if not isinstance(property_value, dict):
@@ -29,6 +30,7 @@ def _extract_variation_label(property_values):
 
 
 def _extract_value_ids(property_values):
+    """Etsy'nin varyasyon değer ID'lerini daha sonra eşleştirmek için topla."""
     value_ids = []
     for property_value in property_values or []:
         if not isinstance(property_value, dict):
@@ -41,9 +43,8 @@ def _extract_value_ids(property_values):
     return value_ids
 
 
-def _sync_listing_variations(client, listing):
-    payload = client.get_listing_inventory(listing.etsy_listing_id)
-    products = payload.get("products", [])
+def _sync_listing_variations(listing, products):
+    """Bir ilanın varyasyonlarını Etsy envanteriyle eşitle."""
     seen_product_ids = set()
 
     for product in products:
@@ -69,6 +70,7 @@ def _sync_listing_variations(client, listing):
             },
         )
 
+    # Etsy'den artık gelmeyen veya etiketi boş olan yerel varyasyonları temizle.
     ListingVariation.objects.filter(listing=listing).exclude(
         etsy_product_id__in=seen_product_ids
     ).delete()
@@ -77,10 +79,14 @@ def _sync_listing_variations(client, listing):
 
 
 def sync_active_listings(user):
+    """Aktif Etsy ilanlarını ve varyasyonlarını yerel kayıtlara aktar.
+
+    Artık aktif olmayan ilanları silmez ve Etsy'deki stok miktarını değiştirmez.
+    """
     account = EtsyAccount.objects.get(user=user)
     client = EtsyClient(account)
 
-    # Shop_id yoksa önce shop’ları çek
+    # Mağaza ID'si yalnızca eksikse Etsy'den bulunur ve sonraki eşitlemeler için saklanır.
     if not account.shop_id:
         if not account.etsy_user_id:
             raise RuntimeError("etsy_user_id is missing. Please re-connect Etsy.") 
@@ -106,7 +112,7 @@ def sync_active_listings(user):
 
 
 
-    # Active listings çek (sayfalı)
+    # Aktif ilanları Etsy API'sinden 50'şer kayıt halinde çek.
     offset = 0
     limit = 50
     listings_synced = 0
@@ -119,19 +125,29 @@ def sync_active_listings(user):
         if not items:
             break
 
+        # Her ilan için ayrı istek yerine sayfadaki görsel ve envanterleri toplu çek.
+        listing_ids = [item["listing_id"] for item in items]
+        images_payload = client.get_listings_with_images(listing_ids)
+        images_by_id = {
+            item["listing_id"]: item.get("images") or []
+            for item in images_payload.get("results", [])
+        }
+        inventory_payload = client.get_listings_inventory_batch(listing_ids)
+        inventory_by_id = {
+            item["listing_id"]: item.get("inventory")
+            for item in inventory_payload.get("results", [])
+        }
+
         for it in items:
+            # Görsel gelmezse ilan yine kaydedilir; görsel alanları boş kalır.
             image_url_170x135 = ""
             image_url_75x75 = ""
-            try:
-                images_payload = client.get_listing_images(it["listing_id"])
-                image_results = images_payload.get("results", [])
-                if image_results:
-                    image_url_170x135 = image_results[0].get("url_170x135", "")
-                    image_url_75x75 = image_results[0].get("url_75x75", "")
-            except Exception:
-                image_url_170x135 = ""
-                image_url_75x75 = ""
+            image_results = images_by_id.get(it["listing_id"], [])
+            if image_results:
+                image_url_170x135 = image_results[0].get("url_170x135", "")
+                image_url_75x75 = image_results[0].get("url_75x75", "")
 
+            # Etsy listing ID'sine göre mevcut kaydı güncelle veya yeni kayıt oluştur.
             listing, _ = Listing.objects.update_or_create(
                 etsy_listing_id=it["listing_id"],
                 defaults={
@@ -146,8 +162,10 @@ def sync_active_listings(user):
                     "price_currency": (it.get("price") or {}).get("currency_code", ""),
                 },
             )
+            # Bir ilanın varyasyon hatası diğer ilanların eşitlenmesini durdurmaz.
             try:
-                _sync_listing_variations(client, listing)
+                inventory = inventory_by_id[it["listing_id"]]
+                _sync_listing_variations(listing, (inventory or {}).get("products", []))
                 variation_sync_ok += 1
             except Exception:
                 variation_sync_failed += 1
@@ -157,7 +175,11 @@ def sync_active_listings(user):
             listings_synced += 1
 
         offset += limit
+        total_count = payload.get("count")
+        if len(items) < limit or (total_count is not None and offset >= total_count):
+            break
 
+    # Arayüzde gösterilecek işlem sayılarını döndür.
     return {
         "listings_synced": listings_synced,
         "variation_sync_ok": variation_sync_ok,

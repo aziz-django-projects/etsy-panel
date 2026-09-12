@@ -1,3 +1,6 @@
+import math
+import time
+
 import httpx
 from django.conf import settings
 from django.utils import timezone
@@ -8,6 +11,10 @@ REFRESH_SAFETY_SECONDS = 300
 
 
 class EtsyAuthError(RuntimeError):
+    pass
+
+
+class EtsyRateLimitError(RuntimeError):
     pass
 
 
@@ -83,11 +90,23 @@ class EtsyClient:
     def _get_json(self, url, params=None):
         self._ensure_access_token()
         with httpx.Client(timeout=20) as client:
-            resp = client.get(url, headers=self._headers(), params=params)
-            if resp.status_code == 401:
-                refreshed = self._refresh_access_token()
-                if refreshed:
+            for attempt in range(3):
+                resp = client.get(url, headers=self._headers(), params=params)
+                if resp.status_code == 401:
+                    self._refresh_access_token()
                     resp = client.get(url, headers=self._headers(), params=params)
+                if resp.status_code != 429:
+                    break
+                retry_after = resp.headers.get("retry-after", "")
+                try:
+                    wait_seconds = float(retry_after)
+                except ValueError:
+                    wait_seconds = 2 ** attempt
+                if attempt == 2 or not math.isfinite(wait_seconds) or wait_seconds > 3:
+                    raise EtsyRateLimitError(
+                        f"Etsy API limiti doldu (429). Retry-After: {retry_after or 'bilinmiyor'} saniye."
+                    )
+                time.sleep(max(wait_seconds, 0))
             resp.raise_for_status()
             return resp.json()
 
@@ -112,6 +131,14 @@ class EtsyClient:
     def get_listing_inventory(self, listing_id: int):
         url = f"{API_BASE}/listings/{listing_id}/inventory"
         return self._get_json(url)
+
+    def get_listings_with_images(self, listing_ids):
+        url = f"{API_BASE}/listings/batch"
+        return self._get_json(url, params={"listing_ids": ",".join(map(str, listing_ids)), "includes": "Images"})
+
+    def get_listings_inventory_batch(self, listing_ids):
+        url = f"{API_BASE}/listings/batch/inventory"
+        return self._get_json(url, params={"listing_ids": ",".join(map(str, listing_ids))})
 
     def get_shop_receipts(
         self,
