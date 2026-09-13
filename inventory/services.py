@@ -68,13 +68,13 @@ def _get_variation_for_item(order_item):
         )
         if property_ids:
             qs = qs.filter(etsy_property_ids=property_ids)
-        hit = qs.first()
-        if hit:
-            return hit
+        hits = list(qs[:2])
+        if len(hits) == 1:
+            return hits[0]
 
     if not label:
         return None
-    return (
+    qs = (
         InventoryVariation.objects.select_related("product")
         .filter(
             product__owner=order_item.order.owner,
@@ -83,8 +83,9 @@ def _get_variation_for_item(order_item):
             is_active=True,
             name__iexact=label,
         )
-        .first()
     )
+    hits = list(qs[:2])
+    return hits[0] if len(hits) == 1 else None
 
 
 def _apply_bucket_delta(bucket, delta: int):

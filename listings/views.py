@@ -16,14 +16,16 @@ class ListingsHomeView(LoginRequiredMixin, View):
             .annotate(
                 variation_count=Count(
                     "variations",
-                    filter=Q(variations__label__gt=""),
+                    filter=Q(variations__label__gt="", variations__is_deleted=False),
                     distinct=True,
                 )
             )
             .prefetch_related(
                 Prefetch(
                     "variations",
-                    queryset=ListingVariation.objects.filter(label__gt="").order_by("id"),
+                    queryset=ListingVariation.objects.filter(
+                        label__gt="", is_deleted=False
+                    ).order_by("id"),
                     to_attr="visible_variations",
                 )
             )

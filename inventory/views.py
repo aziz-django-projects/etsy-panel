@@ -1,12 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Case, F, IntegerField, Prefetch, Value, When
+from django.db.models import Case, Count, F, IntegerField, Prefetch, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 import re
 
-from .models import InventoryProduct, StockBucket, StockMovement
+from .models import InventoryProduct, InventoryVariation, StockBucket, StockMovement
 from listings.models import Listing
 
 
@@ -39,7 +39,14 @@ def inventory_home(request):
                     )
                 )
                 .order_by("size_order", "name"),
-            )
+            ),
+            Prefetch(
+                "variations",
+                queryset=InventoryVariation.objects.filter(
+                    is_active=True, etsy_available=True
+                ).annotate(recipe_count=Count("recipe_items")).order_by("name"),
+                to_attr="catalog_variations",
+            ),
         )
         .order_by("name")
     )
@@ -54,6 +61,11 @@ def inventory_home(request):
 
     for product in products:
         product.image_url_75x75 = listing_images.get(product.etsy_listing_id, "")
+        product.unmapped_variations = [
+            variation
+            for variation in product.catalog_variations
+            if variation.recipe_count == 0
+        ]
         buckets = list(product.stock_buckets.all())
         product.small_stock_buckets = [b for b in buckets if _is_small_bucket(b.name)]
         product.large_stock_buckets = [b for b in buckets if _is_large_bucket(b.name)]

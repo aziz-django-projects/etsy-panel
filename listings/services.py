@@ -1,5 +1,8 @@
 import logging
 
+from django.conf import settings
+from django.db import transaction
+
 from etsy.client import EtsyClient
 from etsy.models import EtsyAccount
 
@@ -70,12 +73,11 @@ def _sync_listing_variations(listing, products):
             },
         )
 
-    # Etsy'den artık gelmeyen veya etiketi boş olan yerel varyasyonları temizle.
+    # Eski varyasyonları silme: yerel stok reçeteleri ve geçmiş siparişler
+    # bunların kimliklerine bağlı olabilir.
     ListingVariation.objects.filter(listing=listing).exclude(
         etsy_product_id__in=seen_product_ids
-    ).delete()
-    ListingVariation.objects.filter(listing=listing, label="").delete()
-    return len(seen_product_ids)
+    ).update(is_deleted=True)
 
 
 def sync_active_listings(user):
@@ -164,8 +166,26 @@ def sync_active_listings(user):
             )
             # Bir ilanın varyasyon hatası diğer ilanların eşitlenmesini durdurmaz.
             try:
-                inventory = inventory_by_id[it["listing_id"]]
-                _sync_listing_variations(listing, (inventory or {}).get("products", []))
+                with transaction.atomic():
+                    inventory = inventory_by_id[it["listing_id"]]
+                    active_product_ids = None
+                    if inventory is not None:
+                        products = inventory.get("products")
+                        if not isinstance(products, list):
+                            raise ValueError("Etsy listing inventory products are missing")
+                        _sync_listing_variations(listing, products)
+                        active_product_ids = {
+                            product.get("product_id")
+                            for product in products
+                            if isinstance(product, dict)
+                            and product.get("product_id")
+                            and not product.get("is_deleted")
+                        }
+
+                    if settings.INVENTORY_CATALOG_SYNC_ENABLED:
+                        from inventory.catalog_sync import reconcile_listing
+
+                        reconcile_listing(listing, active_product_ids)
                 variation_sync_ok += 1
             except Exception:
                 variation_sync_failed += 1

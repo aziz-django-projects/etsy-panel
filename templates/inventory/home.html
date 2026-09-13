@@ -32,6 +32,16 @@
                 </button>
             </div>
 
+            {% if product.unmapped_variations %}
+            <div class="alert alert-warning py-2" role="status">
+                Stok reçetesi bekleyen varyasyonlar:
+                {% for variation in product.unmapped_variations %}
+                <span class="badge text-bg-warning">{{ variation.name }}</span>
+                {% endfor %}
+                Django Admin'de reçete tanımlanana kadar bu varyasyonlar için otomatik stok düşümü yapılmaz.
+            </div>
+            {% endif %}
+
             {% if product.stock_buckets.all|length %}
             {% if product.has_size_groups %}
             <div class="d-flex flex-column gap-3">

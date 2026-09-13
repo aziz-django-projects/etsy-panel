@@ -158,6 +158,9 @@ ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET", "")
 ETSY_REDIRECT_URI = os.getenv("ETSY_REDIRECT_URI", "")
 ETSY_SCOPES = os.getenv("ETSY_SCOPES", "")
 
+# Enable only after the catalogue-to-inventory reconciliation has been checked.
+INVENTORY_CATALOG_SYNC_ENABLED = os.getenv("INVENTORY_CATALOG_SYNC_ENABLED", "0") == "1"
+
 SHIPENTEGRA_CLIENT_ID = os.getenv("SHIPENTEGRA_CLIENT_ID", "")
 SHIPENTEGRA_CLIENT_SECRET = os.getenv("SHIPENTEGRA_CLIENT_SECRET", "")
 SHIPENTEGRA_BASE_URL = os.getenv("SHIPENTEGRA_BASE_URL", "")

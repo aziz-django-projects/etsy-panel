@@ -25,9 +25,14 @@ class InventoryProductAdmin(admin.ModelAdmin):
 
 @admin.register(InventoryVariation)
 class InventoryVariationAdmin(admin.ModelAdmin):
-    list_display = ("name", "product", "is_active", "etsy_value_ids")
-    list_filter = ("is_active",)
-    search_fields = ("name", "product__name", "product__etsy_listing_id")
+    list_display = (
+        "name", "product", "etsy_product_id", "etsy_available", "is_active",
+        "etsy_value_ids",
+    )
+    list_filter = ("etsy_available", "is_active")
+    search_fields = (
+        "name", "etsy_product_id", "product__name", "product__etsy_listing_id",
+    )
 
 
 @admin.register(InventoryRecipeItem)
