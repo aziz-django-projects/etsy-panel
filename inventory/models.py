@@ -48,14 +48,18 @@ class InventoryVariation(models.Model):
         InventoryProduct, related_name="variations", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
+    etsy_product_id = models.BigIntegerField(null=True, blank=True)
     etsy_property_ids = models.JSONField(default=list, blank=True)
     etsy_value_ids = models.JSONField(default=list, blank=True)
+    etsy_available = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["product", "name"], name="uniq_inventory_variation_product_name"
+                fields=["product", "etsy_product_id"],
+                condition=Q(etsy_product_id__isnull=False),
+                name="uniq_inventory_variation_product_etsy_id",
             )
         ]
 
