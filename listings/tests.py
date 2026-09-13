@@ -115,10 +115,13 @@ class InventoryCatalogSyncTests(TestCase):
         listing = Listing.objects.get(owner=self.user, etsy_listing_id=11)
         self.client.force_login(self.user)
         response = self.client.get("/listings/")
-        self.assertContains(response, "Stok takibini başlat")
+        self.assertContains(response, "Stok takip")
+        self.assertContains(response, 'role="switch" aria-checked="false"')
         self.client.post(
             f"/listings/{listing.id}/inventory-tracking/", {"action": "track"}
         )
+        response = self.client.get("/listings/")
+        self.assertContains(response, 'role="switch" aria-checked="true"')
         sync_active_listings(self.user)
         sync_active_listings(self.user)
 

@@ -74,11 +74,16 @@
                         {% csrf_token %}
                         {% if l.inventory_tracked %}
                         <input type="hidden" name="action" value="untrack">
-                        <button class="btn btn-outline-danger btn-sm w-100" type="submit">Stok takibini durdur</button>
                         {% else %}
                         <input type="hidden" name="action" value="track">
-                        <button class="btn btn-outline-primary btn-sm w-100" type="submit">Stok takibini başlat</button>
                         {% endif %}
+                        <button class="inventory-tracking-switch {% if l.inventory_tracked %}is-on{% endif %}" type="submit"
+                            role="switch" aria-checked="{{ l.inventory_tracked|yesno:'true,false' }}">
+                            <span>Stok takip</span>
+                            <span class="inventory-tracking-switch-track" aria-hidden="true">
+                                <span class="inventory-tracking-switch-thumb"></span>
+                            </span>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -94,4 +99,58 @@
         {% endfor %}
     </div>
 </div>
+<style>
+    .inventory-tracking-switch {
+        align-items: center;
+        background: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        color: #6c757d;
+        cursor: pointer;
+        display: flex;
+        font-size: .875rem;
+        font-weight: 600;
+        justify-content: space-between;
+        padding: .4rem .65rem;
+        width: 100%;
+    }
+
+    .inventory-tracking-switch.is-on {
+        background: #e8f6ed;
+        border-color: #79c99a;
+        color: #146c43;
+    }
+
+    .inventory-tracking-switch:focus-visible {
+        outline: 3px solid #86b7fe;
+        outline-offset: 2px;
+    }
+
+    .inventory-tracking-switch-track {
+        background: #adb5bd;
+        border-radius: 1rem;
+        display: inline-flex;
+        height: 1.25rem;
+        padding: .125rem;
+        transition: background-color .2s ease;
+        width: 2.25rem;
+    }
+
+    .inventory-tracking-switch.is-on .inventory-tracking-switch-track {
+        background: #198754;
+    }
+
+    .inventory-tracking-switch-thumb {
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px #0003;
+        height: 1rem;
+        transition: transform .2s ease;
+        width: 1rem;
+    }
+
+    .inventory-tracking-switch.is-on .inventory-tracking-switch-thumb {
+        transform: translateX(1rem);
+    }
+</style>
 {% endblock %}
