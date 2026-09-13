@@ -71,11 +71,15 @@ def reconcile_listing(listing, active_product_ids=None):
     so no variation is marked unavailable and no variation is created.
     """
     with transaction.atomic():
-        product, _ = InventoryProduct.objects.get_or_create(
+        # Inventory is opt-in: a listing is reconciled only after its product
+        # has been selected for local stock tracking.
+        product = InventoryProduct.objects.filter(
             owner=listing.owner,
             etsy_listing_id=listing.etsy_listing_id,
-            defaults={"name": listing.title},
-        )
+            is_active=True,
+        ).first()
+        if product is None:
+            return None
         if listing.title and product.name != listing.title:
             product.name = listing.title
             product.save(update_fields=["name"])

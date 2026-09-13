@@ -110,6 +110,16 @@ class InventoryCatalogSyncTests(TestCase):
         }])
 
         sync_active_listings(self.user)
+        self.assertFalse(InventoryProduct.objects.filter(owner=self.user).exists())
+
+        listing = Listing.objects.get(owner=self.user, etsy_listing_id=11)
+        self.client.force_login(self.user)
+        response = self.client.get("/listings/")
+        self.assertContains(response, "Stok takibini başlat")
+        self.client.post(
+            f"/listings/{listing.id}/inventory-tracking/", {"action": "track"}
+        )
+        sync_active_listings(self.user)
         sync_active_listings(self.user)
 
         product = InventoryProduct.objects.get(owner=self.user, etsy_listing_id=11)
@@ -141,7 +151,7 @@ class InventoryCatalogSyncTests(TestCase):
     @patch("listings.services.EtsyClient")
     def test_legacy_name_match_preserves_locally_disabled_variation(self, client_class):
         product = InventoryProduct.objects.create(
-            owner=self.user, etsy_listing_id=11, name="Old title", is_active=False
+            owner=self.user, etsy_listing_id=11, name="Old title"
         )
         variation = InventoryVariation.objects.create(
             product=product, name="Blue", is_active=False
@@ -156,10 +166,79 @@ class InventoryCatalogSyncTests(TestCase):
         product.refresh_from_db()
         variation.refresh_from_db()
         self.assertEqual(product.name, "Pennant")
-        self.assertFalse(product.is_active)
+        self.assertTrue(product.is_active)
         self.assertFalse(variation.is_active)
         self.assertEqual(variation.etsy_product_id, 101)
         self.assertEqual(InventoryVariation.objects.count(), 1)
+
+    @patch("listings.services.EtsyClient")
+    def test_untracked_product_is_not_reconciled_and_reactivation_keeps_stock(self, client_class):
+        listing = Listing.objects.create(owner=self.user, etsy_listing_id=11, title="Pennant")
+        product = InventoryProduct.objects.create(
+            owner=self.user, etsy_listing_id=11, name="Old title"
+        )
+        bucket = StockBucket.objects.create(
+            owner=self.user, product=product, name="Fabric", quantity=8
+        )
+        variation = InventoryVariation.objects.create(
+            product=product, name="Blue", etsy_value_ids=[7]
+        )
+        recipe = InventoryRecipeItem.objects.create(
+            variation=variation, bucket=bucket, quantity=2
+        )
+        self.client.force_login(self.user)
+        url = f"/listings/{listing.id}/inventory-tracking/"
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(url, {"action": "untrack"})
+        product.refresh_from_db()
+        self.assertFalse(product.is_active)
+
+        self.set_etsy_response(client_class.return_value, title="New title", products=[{
+            "product_id": 101,
+            "property_values": [{"values": ["Navy"], "value_ids": [7]}],
+        }])
+        sync_active_listings(self.user)
+        product.refresh_from_db()
+        variation.refresh_from_db()
+        self.assertEqual(product.name, "Old title")
+        self.assertIsNone(variation.etsy_product_id)
+        self.assertEqual(InventoryVariation.objects.count(), 1)
+        self.assertEqual(bucket.quantity, 8)
+        self.assertTrue(InventoryRecipeItem.objects.filter(pk=recipe.pk).exists())
+
+        order = Order.objects.create(
+            owner=self.user, etsy_order_id=91, status=Order.Status.SHIPPED
+        )
+        OrderItem.objects.create(
+            order=order, etsy_listing_id=11, quantity=1,
+            variation_raw=[{"value_id": 7}],
+        )
+        apply_stock_for_order_transition(order, Order.Status.RECEIVED, False)
+        self.assertEqual(StockMovement.objects.count(), 0)
+
+        self.client.post(url, {"action": "track"})
+        sync_active_listings(self.user)
+        product.refresh_from_db()
+        variation.refresh_from_db()
+        self.assertTrue(product.is_active)
+        self.assertEqual(product.name, "New title")
+        self.assertEqual(variation.name, "Navy")
+        self.assertEqual(variation.etsy_product_id, 101)
+        self.assertEqual(InventoryProduct.objects.count(), 1)
+        self.assertEqual(bucket.quantity, 8)
+        self.assertTrue(InventoryRecipeItem.objects.filter(pk=recipe.pk).exists())
+
+    def test_tracking_action_is_limited_to_listing_owner(self):
+        listing = Listing.objects.create(owner=self.user, etsy_listing_id=11)
+        other_user = get_user_model().objects.create_user(username="other", password="test")
+        self.client.force_login(other_user)
+
+        response = self.client.post(
+            f"/listings/{listing.id}/inventory-tracking/", {"action": "track"}
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(InventoryProduct.objects.exists())
 
     @patch("listings.services.EtsyClient")
     def test_rename_preserves_recipe_stock_and_order_matching(self, client_class):

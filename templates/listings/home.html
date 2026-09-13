@@ -70,6 +70,16 @@
                     </div>
                     {% endif %}
                     {% endwith %}
+                    <form method="post" action="{% url 'listing_inventory_tracking' l.id %}" class="mt-2">
+                        {% csrf_token %}
+                        {% if l.inventory_tracked %}
+                        <input type="hidden" name="action" value="untrack">
+                        <button class="btn btn-outline-danger btn-sm w-100" type="submit">Stok takibini durdur</button>
+                        {% else %}
+                        <input type="hidden" name="action" value="track">
+                        <button class="btn btn-outline-primary btn-sm w-100" type="submit">Stok takibini başlat</button>
+                        {% endif %}
+                    </form>
                 </div>
             </div>
         </div>
